@@ -38,17 +38,22 @@ pub fn main() -> Result<(), String>{
     Ok(())
 }
 
-const PLANET_RAD: f32 = 20.;
-const GALAXY_RADIUS: f32 = 150.;
+const PLANET_RAD: f32 = 25.;
+const GALAXY_RADIUS: f32 = 175.;
 
 fn setup(
     topology: Res<GalaxyTopologyResource>,
     mut commands: Commands,
+    asset_loader: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
 
     commands.spawn(Camera2d);
+
+    let background: Handle<Image> = asset_loader.load("sky.png");
+
+    commands.spawn(Sprite::from_image(background));
 
     let initial_gtop = topology
         .as_ref()
