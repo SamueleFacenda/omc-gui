@@ -10,6 +10,13 @@ pub struct OrchestratorResource {
     pub orchestrator: Orchestrator,
 }
 
+#[derive(Resource)]
+pub enum GameState {
+    WaitingStart,
+    Playing,
+    Paused
+}
+
 #[derive(Clone, Default)]
 pub struct GalaxySnapshot {
     pub edges: Vec<(u32, u32)>,
@@ -63,6 +70,8 @@ pub fn setup_orchestrator(
                 ..default()
     }});
 
+    commands.insert_resource(GameState::WaitingStart);
+
     commands.insert_resource(GameTimer(Timer::from_seconds(GAME_TICK, TimerMode::Repeating)));
 }
 
@@ -72,6 +81,7 @@ pub fn game_loop(
     mut commands: Commands,
     mut orchestrator: ResMut<OrchestratorResource>,
     mut timer: ResMut<GameTimer>,
+    state: Res<GameState>,
     time: Res<Time>,
 ) {
     timer.tick(time.delta());

@@ -1,5 +1,11 @@
 use bevy::prelude::*;
 
+#[derive(Component)]
+pub enum ButtonActions {
+    StartGame,
+    StopGame
+}
+
 pub fn setup_ui(commands: Commands) {
     draw_game_options_menu(commands);
 }
@@ -27,9 +33,16 @@ fn draw_game_options_menu(
             ..default()
     });
 
+    let button_row = Node {
+            width: Val::Percent(100.0),
+            flex_direction: FlexDirection::Row,
+            padding: UiRect::all(Val::Px(20.0)),
+            ..default()
+        };
+
     let title_text = Text::new("Galaxy Menu");
 
-    let test_button = (Button,
+    let button = (Button,
                 Node {
                     width: Val::Px(150.0),
                     height: Val::Px(50.0),
@@ -51,17 +64,29 @@ fn draw_game_options_menu(
             // 3a. Menu title
             parent.spawn(title_text);
             
-            // 3b. Button
-            parent.spawn(test_button)
+            // 3b. Button Row 
+            parent.spawn(button_row)
             .with_children(|parent| {
-                // 4. Button text
-                parent.spawn(button_text);
+                
+                //4a. button 1
+                parent.spawn(button.clone())
+                .with_children(|parent| {
+                    // 5. Button text
+                    parent.spawn(button_text);
+                });
+
+                //4a. button 2
+                parent.spawn((button.clone(), ButtonActions::StartGame))
+                .with_children(|parent| {
+                    // 5. Button text
+                    parent.spawn(Text::new("Start Game"));
+                });
             });
         });
     });
 }
 
-pub fn button_hover(
+pub(crate) fn button_hover(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
@@ -78,6 +103,28 @@ pub fn button_hover(
             }
             Interaction::None => {
                 *color = Color::srgb(0.15, 0.15, 0.15).into();
+            }
+        }
+    }
+}
+
+pub(crate) fn menu_action(
+    mut action_query: Query<
+        (&Interaction, &ButtonActions),
+        (Changed<Interaction>, With<Button>)
+    >
+) {
+    for(&interaction, action) in &mut action_query {
+        if interaction == Interaction::Pressed {
+            match action {
+                ButtonActions::StartGame => {
+                    //change the enum
+                    println!("game should start now...");
+                },
+                ButtonActions::StopGame => {
+                    //change the enum
+                    println!("game should pause now...");
+                }
             }
         }
     }

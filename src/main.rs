@@ -26,7 +26,7 @@ pub fn main() -> Result<(), String>{
         ))
     .add_systems(PreStartup, assets::load_assets)
     .add_systems(Startup, (game:: setup_orchestrator, galaxy::setup.after(setup_orchestrator), ui::setup_ui))
-    .add_systems(Update, ui::button_hover)
+    .add_systems(Update, (ui::button_hover, ui::menu_action))
     .add_systems(FixedUpdate, (game::game_loop, galaxy::draw_topology))
     .add_observer(galaxy::destroy_link);
     app.run();
