@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-pub const SPRITE_NUM: usize = 3;
+pub const SPRITE_NUM: usize = 7;
 
 #[derive(Resource)]
 pub(crate) struct PlanetAssets {
