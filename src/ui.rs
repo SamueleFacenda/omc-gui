@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::game::GameState;
+use crate::game::{GameState, PlanetClickRes};
 
 #[derive(Component)]
 pub enum ButtonActions {
@@ -12,10 +12,14 @@ pub(crate) fn draw_game_options_menu(
     mut commands: Commands,
 ) {
     let root = Node {
-        width: Val::Percent(100.0),
+        width: Val::Px(350.),
         height: Val::Percent(100.0),
         // Right aligned
-        justify_content: JustifyContent::FlexEnd, 
+        justify_content: JustifyContent::FlexEnd,
+        margin: UiRect {
+            left: Val::Auto,
+            ..default()
+        },
         ..default()
     };
 
@@ -90,7 +94,7 @@ pub(crate) fn draw_planet_menu(
 ) {
 
     let root = Node {
-        width: Val::Percent(100.0),
+        width: Val::Px(350.0),
         height: Val::Percent(100.0),
         // Left aligned
         justify_content: JustifyContent::FlexStart, 
@@ -190,10 +194,11 @@ pub(crate) fn draw_planet_menu(
 ///Draws the menu that holds the list of all explorers and planets
 pub(crate) fn draw_selection_menu(
     mut commands: Commands,
+    selected_planet: Res<PlanetClickRes>
 ) {
 
     let root = Node {
-        width: Val::Percent(100.0),
+        width: Val::Px(350.0),
         height: Val::Percent(100.0),
         // Left aligned
         justify_content: JustifyContent::FlexStart, 
@@ -240,17 +245,14 @@ pub(crate) fn draw_selection_menu(
             // 3b. Button Row 
             parent.spawn(button_row)
             .with_children(|parent| {
-                    for i in 0..200 {
-                    parent.spawn((
-                        Node {
-                            min_height: px(21.),
-                            max_height: px(21.),
-                            ..default()
+                    match &selected_planet.planet {
+                        Some(planet) => {
+                            parent.spawn(Text::new(format!("planet with id {}", planet.id)));
                         },
-                        Text(format!("Item {i}")),
-                    )
-                    );
-                }
+                        None => {
+                            parent.spawn(Text::new("choose a planet!"));
+                        },
+                    }
             });
         });
     });

@@ -1,4 +1,5 @@
-use omc_galaxy::Orchestrator;
+use omc_galaxy::{Orchestrator, PlanetInfoMap};
+use omc_galaxy::utils::registry::PlanetType;
 use bevy::prelude::*;
 
 use crate::events::PlanetDespawn;
@@ -17,17 +18,21 @@ pub enum GameState {
     Paused
 }
 
-#[derive(Clone, Default)]
+#[derive(Resource, Clone)]
 pub struct GalaxySnapshot {
     pub edges: Vec<(u32, u32)>,
     pub planet_num: usize,
-    pub planet_states: Vec<(usize, omc_galaxy::PlanetStatus)>
+    pub planet_states: PlanetInfoMap
 }
 
-// Shared game snapshot object
-#[derive(Resource, Default)]
-pub struct GameSnapshot {
-    pub snapshot: GalaxySnapshot,
+pub struct SelectedPlanet {
+    pub id: u32,
+    pub name: PlanetType
+}
+
+#[derive(Resource)]
+pub struct PlanetClickRes {
+    pub planet: Option<SelectedPlanet>
 }
 
 #[derive(Resource, Deref, DerefMut)]
@@ -58,21 +63,23 @@ pub fn setup_orchestrator(
         _ => {}
     }
 
+    let lookup = orchestrator.get_planets_info();
+
     commands.insert_resource(OrchestratorResource {
         orchestrator,
     });
 
-    commands.insert_resource(GameSnapshot{
-        snapshot:
-            GalaxySnapshot{
-                edges:topology,
-                planet_num,
-                ..default()
-    }});
+    commands.insert_resource(GalaxySnapshot{
+                    edges:topology,
+                    planet_num,
+                    planet_states: lookup
+    });
 
     commands.insert_resource(GameState::WaitingStart);
 
     commands.insert_resource(GameTimer(Timer::from_seconds(GAME_TICK, TimerMode::Repeating)));
+
+    commands.insert_resource(PlanetClickRes{planet: None});
 }
 
 

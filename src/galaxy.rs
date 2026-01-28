@@ -1,11 +1,11 @@
-use bevy::prelude::*;
+use bevy::{color::palettes::css::{GREEN, WHITE}, prelude::*};
 use std::f32::consts::TAU;
 
-use crate::{assets::{PlanetAssets, SPRITE_NUM}, game::GameSnapshot, events::PlanetDespawn};
+use crate::{assets::{PlanetAssets, SPRITE_NUM}, events::PlanetDespawn, game::{GalaxySnapshot, OrchestratorResource, PlanetClickRes, SelectedPlanet}};
 
 #[derive(Component)]
 pub(crate) struct Planet{
-    id: usize
+    id: u32
 }
 
 #[derive(Component)]
@@ -18,7 +18,7 @@ const GALAXY_RADIUS: f32 = 250.;
 //const MAX_PLANET_TYPES: usize = 7;
 
 pub fn setup(
-    topology: Res<GameSnapshot>,
+    galaxy: Res<GalaxySnapshot>,
     mut commands: Commands,
     asset_loader: Res<AssetServer>,
     planet_assets: Res<PlanetAssets>,
@@ -35,10 +35,10 @@ pub fn setup(
         ..Default::default()
     });
 
-    let planet_num = topology.snapshot.planet_num;
+    let planet_num = galaxy.planet_num;
 
-    for i in 0..planet_num {
-        
+    for (&i, info) in galaxy.planet_states.iter() {
+
         // spawn all the planets in a circle, with even spacing
         // Tau = 2 * pi, so all the planets go around the circle
         let angle = TAU * (i as f32) / (planet_num as f32);
@@ -48,7 +48,7 @@ pub fn setup(
         let y = GALAXY_RADIUS * angle.sin();
 
         //Handle is based on Arc, so cloning is fine
-        let image_handle = planet_assets.handles[i % SPRITE_NUM].clone();
+        let image_handle = planet_assets.handles[(i as usize) % SPRITE_NUM].clone();
 
         commands.spawn((
             Planet{id: i},
@@ -62,19 +62,20 @@ pub fn setup(
                 y,
                 2.0,
             ),
-        ));
+            Pickable::default()
+        ))
+        .observe(choose_on_hover);
     }
 
 }
 
 pub fn draw_topology(
     mut commands: Commands,
-    snapshot: Res<GameSnapshot>,
+    snapshot: Res<GalaxySnapshot>,
     planets: Query<(&Planet, &Transform)>
 ) {
-    let snap = &snapshot.snapshot;
     if snapshot.is_changed() {
-        let gtop = &snap.edges; //TODO do something BETTER than this
+        let gtop = &snapshot.edges; //TODO do something BETTER than this
 
         for (a, b) in gtop.iter() {
             let (_, t1) = planets.iter().find(|(p, _)| p.id as u32 == *a).unwrap();
@@ -131,8 +132,50 @@ pub fn destroy_link(
 
     //despawn the planet itself
     for (p, e) in planet_query {
-        if p.id == event.planet_id as usize {
+        if p.id == event.planet_id {
             commands.entity(e).despawn();
         }
     }
+}
+
+fn choose_on_hover(
+    hover: On<Pointer<Click>>,
+    mut planet_query: Query<(&mut Sprite, &Planet)>,
+    clicked_planet: ResMut<PlanetClickRes>,
+    orchestrator: Res<OrchestratorResource>,
+) {
+    info!("Picking event was triggered");
+
+    //reset all sprite dimensions to normal
+    for (mut sprite,_) in &mut planet_query {
+        sprite.custom_size = Some(Vec2::splat(PLANET_RAD * 2.));  
+    }
+
+    if let Ok((mut sprite,planet)) = planet_query.get_mut(hover.entity) {
+        info!("picked info for planet {}", planet.id);
+        // make sprite slightly bigger
+        sprite.custom_size = Some(Vec2::splat(PLANET_RAD * 2.5));
+        update_selected_planet(clicked_planet, orchestrator, planet.id);
+    }
+
+    
+}
+
+fn update_selected_planet (
+    clicked_planet: ResMut<PlanetClickRes>,
+    orchestrator: Res<OrchestratorResource>,
+    planet_id: u32
+) {
+    // TODO change this ASAP this is super wasteful.
+    // there's no need to clone the map at every click
+    // actually the alternative is once per tick so maybe that's not bad
+    let map = orchestrator.orchestrator.get_planets_info();
+
+    if let Some(planet_info) = map.get_info(planet_id) {
+        clicked_planet.into_inner().planet = Some(SelectedPlanet{
+            id: planet_id,
+            name: planet_info.name
+        })
+    }
+    
 }
