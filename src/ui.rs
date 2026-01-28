@@ -82,9 +82,13 @@ pub(crate) fn draw_game_options_menu(
     });
 }
 
-pub(crate) fn draw_nested_menu(
+/// Draws the menu showcasing everything inside a planet.
+/// This includes charged cells, available rockets, available
+/// resource generation rules and visiting explorers. 
+pub(crate) fn draw_planet_menu(
     mut commands: Commands,
 ) {
+
     let root = Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
@@ -101,9 +105,25 @@ pub(crate) fn draw_nested_menu(
             width: Val::Px(350.0),
             height: Val::Percent(100.0),
             flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
             padding: UiRect::all(Val::Px(20.0)),
             ..default()
     });
+
+    let back_row = Node {
+            width: Val::Percent(100.0),
+            flex_direction: FlexDirection::Row,
+            padding: UiRect::all(Val::Px(10.0)),
+            ..default()
+        };
+
+    let back_icon = (
+        Text::new("<"),
+        TextFont{
+            font_size: 20.,
+            ..default()
+        }
+    );
 
     let button_row = Node {
             width: Val::Percent(100.0),
@@ -112,7 +132,13 @@ pub(crate) fn draw_nested_menu(
             ..default()
         };
 
-    let title_text = Text::new("Galaxy Menu");
+    let title_text = (
+        Text::new("PlanetName"),
+        TextFont{
+            font_size: 32.,
+            ..default()
+        }
+    );
 
     let button = (Button,
                 Node {
@@ -131,6 +157,11 @@ pub(crate) fn draw_nested_menu(
         // 2. Side menu panel
         parent.spawn(side_menu_container)
         .with_children(|parent| {
+            parent.spawn(back_row)
+            .with_children(|parent| {
+                parent.spawn(back_icon);
+            });
+            
             // 3a. Menu title
             parent.spawn(title_text);
             
@@ -151,6 +182,75 @@ pub(crate) fn draw_nested_menu(
                     // 5. Button text
                     parent.spawn(Text::new("Stop Game"));
                 });
+            });
+        });
+    });
+}
+
+///Draws the menu that holds the list of all explorers and planets
+pub(crate) fn draw_selection_menu(
+    mut commands: Commands,
+) {
+
+    let root = Node {
+        width: Val::Percent(100.0),
+        height: Val::Percent(100.0),
+        // Left aligned
+        justify_content: JustifyContent::FlexStart, 
+        ..default()
+    };
+
+    let side_menu_container = (
+        BackgroundColor{
+            0: Color::Srgba(Srgba { red: 0.12, green: 0.18, blue: 0.18, alpha: 0.8 })
+        },
+        Node {
+            width: Val::Px(350.0),
+            height: Val::Percent(100.0),
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            padding: UiRect::all(Val::Px(20.0)),
+            ..default()
+    });
+
+    let button_row = Node {
+            width: Val::Percent(100.0),
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::all(Val::Px(20.0)),
+            ..default()
+        };
+
+    let title_text = (
+        Text::new("Select Entity"),
+        TextFont{
+            font_size: 32.,
+            ..default()
+        }
+    );
+    
+    // 1. Root node
+    commands.spawn(root)
+        .with_children(|parent| {
+        // 2. Side menu panel
+        parent.spawn(side_menu_container)
+        .with_children(|parent| {
+            // 3a. Menu title
+            parent.spawn(title_text);
+            
+            // 3b. Button Row 
+            parent.spawn(button_row)
+            .with_children(|parent| {
+                    for i in 0..200 {
+                    parent.spawn((
+                        Node {
+                            min_height: px(21.),
+                            max_height: px(21.),
+                            ..default()
+                        },
+                        Text(format!("Item {i}")),
+                    )
+                    );
+                }
             });
         });
     });
