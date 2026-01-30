@@ -8,7 +8,7 @@ use crate::{
     events::{Celestial, CelestialBody, PlanetDespawn},
     game::{
         self, GalaxySnapshot, PlanetClickRes, PlanetInfoRes,
-    }, ui::UiText
+    }, ui::UiPlanetText
 };
 
 #[derive(Component)]
@@ -55,8 +55,19 @@ pub fn setup(
         let x = GALAXY_RADIUS * angle.cos();
         let y = GALAXY_RADIUS * angle.sin();
 
+        let image_index = match planets.map.get_info(i).unwrap().name {
+                omc_galaxy::utils::registry::PlanetType::BlackAdidasShoe => 0,
+                omc_galaxy::utils::registry::PlanetType::Ciuc => 1,
+                omc_galaxy::utils::registry::PlanetType::HoustonWeHaveABorrow => 2,
+                omc_galaxy::utils::registry::PlanetType::ImmutableCosmicBorrow => 3,
+                omc_galaxy::utils::registry::PlanetType::OneMillionCrabs => 4,
+                omc_galaxy::utils::registry::PlanetType::Rustrelli => 5,
+                omc_galaxy::utils::registry::PlanetType::RustyCrab => 6,
+                omc_galaxy::utils::registry::PlanetType::TheCompilerStrikesBack => 7,
+            };
+
         //Handle is based on Arc, so cloning is fine
-        let image_handle = planet_assets.handles[(i as usize) % SPRITE_NUM].clone();
+        let image_handle = planet_assets.handles[(image_index) % SPRITE_NUM].clone();
 
         commands
             .spawn((
@@ -235,7 +246,7 @@ pub(crate) fn choose_on_click(
 pub(crate) fn update_selected_planet(
     selected_planet: Res<PlanetClickRes>,
     planet_status: Res<PlanetInfoRes>,
-    mut text_to_set: Query<(&mut Text, &UiText)>,
+    mut text_to_set: Query<(&mut Text, &UiPlanetText)>,
 ) {
     // exit early if the state is the same to avoid extra computation 
     if !selected_planet.is_changed() && !planet_status.is_changed() {
@@ -250,20 +261,20 @@ pub(crate) fn update_selected_planet(
         if let Some(planet_info) = map.get_info(planet_id) {
             for (mut text, field_type) in &mut text_to_set {
                 match field_type {
-                    UiText::Name => {
+                    UiPlanetText::Name => {
                         **text = format!("Name: {:?}", planet_info.name);
                     },
-                    UiText::Id => {
+                    UiPlanetText::Id => {
                         **text = format!("Planet ID: {:?}", planet_id);
                     },
-                    UiText::Rocket =>{
+                    UiPlanetText::Rocket =>{
                         if planet_info.rocket {
                             **text = "Rocket: AVAILABLE".to_string();
                         } else {
                             **text = "Rocket: NOT PRESENT".to_string();
                         }
                     }
-                    UiText::Energy =>{
+                    UiPlanetText::Energy =>{
 
                         let current_energy = planet_info.charged_cells_count;
                         let max_energy = planet_info.energy_cells.len();
