@@ -1,6 +1,6 @@
-use bevy::prelude::*;
+use bevy::{color::palettes::css::RED, ecs::relationship::RelatedSpawnerCommands, input::mouse::{MouseScrollUnit, MouseWheel}, picking::hover::HoverMap, prelude::*};
 
-use crate::game::{GameState, PlanetClickRes};
+use crate::game::GameState;
 
 #[derive(Component)]
 pub enum ButtonActions {
@@ -9,7 +9,7 @@ pub enum ButtonActions {
 }
 
 #[derive(Component)]
-pub enum UiText {
+pub enum UiPlanetText {
     Name,
     Id,
     Energy,
@@ -17,6 +17,9 @@ pub enum UiText {
     ResourceList,
     ExplorerList
 }
+
+#[derive(Component)]
+pub struct LogText;
 
 pub(crate) fn draw_game_options_menu(mut commands: Commands) {
     let root = Node {
@@ -36,8 +39,8 @@ pub(crate) fn draw_game_options_menu(mut commands: Commands) {
             0: Color::Srgba(Srgba {
                 red: 0.12,
                 green: 0.18,
-                blue: 0.18,
-                alpha: 0.8,
+                blue: 0.24,
+                alpha: 0.7,
             }),
         },
         Node {
@@ -52,24 +55,51 @@ pub(crate) fn draw_game_options_menu(mut commands: Commands) {
     let button_row = Node {
         width: Val::Percent(100.0),
         flex_direction: FlexDirection::Row,
-        padding: UiRect::all(Val::Px(20.0)),
         ..default()
     };
 
+    let log_square = (
+        BackgroundColor (Color::Srgba(Srgba { red:0., green: 0., blue: 0., alpha: 0.6 })),
+        Node {
+            flex_direction: FlexDirection::Column,
+            align_self: AlignSelf::Stretch,
+            height: Val::Percent(50.),
+            overflow: Overflow::scroll_y(),
+            ..default()
+        },
+    );
+
     let title_text = Text::new("Galaxy Menu");
 
-    let button = (
+    let button_factory = |text: Text| {
+        (
         Button,
+        BackgroundColor(Color::srgb(0.67, 0.30, 0.53)),
         Node {
-            width: Val::Px(150.0),
-            height: Val::Px(50.0),
+            width: Val::Percent(50.),
+            height: Val::Px(40.0),
             margin: UiRect::all(Val::Px(20.0)),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             ..default()
         },
-        BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
-    );
+        BorderRadius::all(Val::Px(15.)),
+        children![(
+            text,
+            TextFont {
+                font_size: 12.,
+                ..default()
+            },
+            TextLayout {
+                justify: Justify::Center,
+                ..default() 
+            },
+            TextColor(
+                Color::srgb(0.97, 0.98, 0.96)
+            )
+        )]
+    )
+    };
 
     // 1. Root node
     commands.spawn(root).with_children(|parent| {
@@ -82,19 +112,18 @@ pub(crate) fn draw_game_options_menu(mut commands: Commands) {
             parent.spawn(button_row).with_children(|parent| {
                 //4a. button 1
                 parent
-                    .spawn((button.clone(), ButtonActions::StartGame))
-                    .with_children(|parent| {
-                        // 5. Button text
-                        parent.spawn(Text::new("Start Game"));
-                    });
+                    .spawn((button_factory(Text::new("Start")), ButtonActions::StartGame));
 
-                //4a. button 2
+                //4b. button 2
                 parent
-                    .spawn((button.clone(), ButtonActions::StopGame))
-                    .with_children(|parent| {
-                        // 5. Button text
-                        parent.spawn(Text::new("Stop Game"));
-                    });
+                    .spawn((button_factory(Text::new("Pause")), ButtonActions::StopGame));
+                    
+            });
+            parent.spawn(log_square).with_children(|parent| {
+                parent.spawn((
+                    Text::new(""),
+                    LogText
+                ));
             });
         });
     });
@@ -157,19 +186,19 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
                 .with_children(|parent| {
                     parent.spawn((
                         Text::new("choose a planet!"),
-                        UiText::Name
+                        UiPlanetText::Name
                     ));
                     parent.spawn((
                         Text::new(""),
-                        UiText::Id
+                        UiPlanetText::Id
                     ));
                     parent.spawn((
                         Text::new(""),
-                        UiText::Energy
+                        UiPlanetText::Energy
                     ));
                     parent.spawn((
                         Text::new(""),
-                        UiText::Rocket
+                        UiPlanetText::Rocket
                     ));
                 });
         });
@@ -192,7 +221,7 @@ pub(crate) fn button_hover(
                 *color = Color::srgb(0.25, 0.25, 0.25).into();
             }
             Interaction::None => {
-                *color = Color::srgb(0.15, 0.15, 0.15).into();
+                *color = Color::srgb(0.07, 0.30, 0.53).into();
             }
         }
     }
@@ -215,5 +244,89 @@ pub(crate) fn menu_action(
                 }
             }
         }
+    }
+}
+
+/// UI scrolling event.
+#[derive(EntityEvent, Debug)]
+#[entity_event(propagate, auto_propagate)]
+pub struct Scroll {
+    entity: Entity,
+    /// Scroll delta in logical coordinates.
+    delta: Vec2,
+}
+
+
+/// Injects scroll events into the UI hierarchy.
+pub(crate) fn send_scroll_events(
+    mut mouse_wheel_reader: MessageReader<MouseWheel>,
+    hover_map: Res<HoverMap>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+) {
+    for mouse_wheel in mouse_wheel_reader.read() {
+        let mut delta = -Vec2::new(mouse_wheel.x, mouse_wheel.y);
+
+        if mouse_wheel.unit == MouseScrollUnit::Line {
+            delta *= 21.;
+        }
+
+        if keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+            std::mem::swap(&mut delta.x, &mut delta.y);
+        }
+
+        for pointer_map in hover_map.values() {
+            for entity in pointer_map.keys().copied() {
+                commands.trigger(Scroll { entity, delta });
+            }
+        }
+    }
+}
+
+
+pub(crate) fn on_scroll_handler(
+    mut scroll: On<Scroll>,
+    mut query: Query<(&mut ScrollPosition, &Node, &ComputedNode)>,
+) {
+    let Ok((mut scroll_position, node, computed)) = query.get_mut(scroll.entity) else {
+        return;
+    };
+
+    let max_offset = (computed.content_size() - computed.size()) * computed.inverse_scale_factor();
+
+    let delta = &mut scroll.delta;
+    if node.overflow.x == OverflowAxis::Scroll && delta.x != 0. {
+        // Is this node already scrolled all the way in the direction of the scroll?
+        let max = if delta.x > 0. {
+            scroll_position.x >= max_offset.x
+        } else {
+            scroll_position.x <= 0.
+        };
+
+        if !max {
+            scroll_position.x += delta.x;
+            // Consume the X portion of the scroll delta.
+            delta.x = 0.;
+        }
+    }
+
+    if node.overflow.y == OverflowAxis::Scroll && delta.y != 0. {
+        // Is this node already scrolled all the way in the direction of the scroll?
+        let max = if delta.y > 0. {
+            scroll_position.y >= max_offset.y
+        } else {
+            scroll_position.y <= 0.
+        };
+
+        if !max {
+            scroll_position.y += delta.y;
+            // Consume the Y portion of the scroll delta.
+            delta.y = 0.;
+        }
+    }
+
+    // Stop propagating when the delta is fully consumed.
+    if *delta == Vec2::ZERO {
+        scroll.propagate(false);
     }
 }

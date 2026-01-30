@@ -44,14 +44,17 @@ pub fn main() -> Result<(), String> {
     )
     .add_systems(Update,(
             ui::button_hover, 
-            ui::menu_action, 
+            ui::menu_action,
+            ui::send_scroll_events,
             galaxy::despawn_celestial,
-            galaxy::update_selected_planet
+            galaxy::update_selected_planet,
+            game::log_text
         ),
     )
     .add_systems(FixedUpdate, (game::game_loop, galaxy::draw_topology))
     .add_observer(galaxy::destroy_link)
-    .add_observer(galaxy::move_celestial);
+    .add_observer(galaxy::move_celestial)
+    .add_observer(ui::on_scroll_handler);
     app.run();
     Ok(())
 }
