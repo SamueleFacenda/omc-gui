@@ -5,12 +5,20 @@ use crate::game::{GameState, PlanetClickRes};
 #[derive(Component)]
 pub enum ButtonActions {
     StartGame,
-    StopGame
+    StopGame,
 }
 
-pub(crate) fn draw_game_options_menu(
-    mut commands: Commands,
-) {
+#[derive(Component)]
+pub enum UiText {
+    Name,
+    Id,
+    Energy,
+    Rocket,
+    ResourceList,
+    ExplorerList
+}
+
+pub(crate) fn draw_game_options_menu(mut commands: Commands) {
     let root = Node {
         width: Val::Px(350.),
         height: Val::Percent(100.0),
@@ -24,8 +32,13 @@ pub(crate) fn draw_game_options_menu(
     };
 
     let side_menu_container = (
-        BackgroundColor{
-            0: Color::Srgba(Srgba { red: 0.12, green: 0.18, blue: 0.18, alpha: 0.8 })
+        BackgroundColor {
+            0: Color::Srgba(Srgba {
+                red: 0.12,
+                green: 0.18,
+                blue: 0.18,
+                alpha: 0.8,
+            }),
         },
         Node {
             width: Val::Px(350.0),
@@ -33,76 +46,78 @@ pub(crate) fn draw_game_options_menu(
             flex_direction: FlexDirection::Column,
             padding: UiRect::all(Val::Px(20.0)),
             ..default()
-    });
+        },
+    );
 
     let button_row = Node {
-            width: Val::Percent(100.0),
-            flex_direction: FlexDirection::Row,
-            padding: UiRect::all(Val::Px(20.0)),
-            ..default()
-        };
+        width: Val::Percent(100.0),
+        flex_direction: FlexDirection::Row,
+        padding: UiRect::all(Val::Px(20.0)),
+        ..default()
+    };
 
     let title_text = Text::new("Galaxy Menu");
 
-    let button = (Button,
-                Node {
-                    width: Val::Px(150.0),
-                    height: Val::Px(50.0),
-                    margin: UiRect::all(Val::Px(20.0)),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                BackgroundColor(Color::srgb(0.2, 0.2, 0.2)));
-    
+    let button = (
+        Button,
+        Node {
+            width: Val::Px(150.0),
+            height: Val::Px(50.0),
+            margin: UiRect::all(Val::Px(20.0)),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
+    );
+
     // 1. Root node
-    commands.spawn(root)
-        .with_children(|parent| {
+    commands.spawn(root).with_children(|parent| {
         // 2. Side menu panel
-        parent.spawn(side_menu_container)
-        .with_children(|parent| {
+        parent.spawn(side_menu_container).with_children(|parent| {
             // 3a. Menu title
             parent.spawn(title_text);
-            
-            // 3b. Button Row 
-            parent.spawn(button_row)
-            .with_children(|parent| {
-                
+
+            // 3b. Button Row
+            parent.spawn(button_row).with_children(|parent| {
                 //4a. button 1
-                parent.spawn((button.clone(), ButtonActions::StartGame))
-                .with_children(|parent| {
-                    // 5. Button text
-                    parent.spawn(Text::new("Start Game"));
-                });
+                parent
+                    .spawn((button.clone(), ButtonActions::StartGame))
+                    .with_children(|parent| {
+                        // 5. Button text
+                        parent.spawn(Text::new("Start Game"));
+                    });
 
                 //4a. button 2
-                parent.spawn((button.clone(), ButtonActions::StopGame))
-                .with_children(|parent| {
-                    // 5. Button text
-                    parent.spawn(Text::new("Stop Game"));
-                });
+                parent
+                    .spawn((button.clone(), ButtonActions::StopGame))
+                    .with_children(|parent| {
+                        // 5. Button text
+                        parent.spawn(Text::new("Stop Game"));
+                    });
             });
         });
     });
 }
 
 ///Draws the menu that holds the list of all explorers and planets
-pub(crate) fn draw_selection_menu(
-    mut commands: Commands,
-    selected_planet: Res<PlanetClickRes>
-) {
-
+pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
     let root = Node {
         width: Val::Px(350.0),
         height: Val::Percent(100.0),
         // Left aligned
-        justify_content: JustifyContent::FlexStart, 
+        justify_content: JustifyContent::FlexStart,
         ..default()
     };
 
     let side_menu_container = (
-        BackgroundColor{
-            0: Color::Srgba(Srgba { red: 0.12, green: 0.18, blue: 0.18, alpha: 0.8 })
+        BackgroundColor {
+            0: Color::Srgba(Srgba {
+                red: 0.12,
+                green: 0.18,
+                blue: 0.18,
+                alpha: 0.8,
+            }),
         },
         Node {
             width: Val::Px(350.0),
@@ -111,44 +126,52 @@ pub(crate) fn draw_selection_menu(
             align_items: AlignItems::Center,
             padding: UiRect::all(Val::Px(20.0)),
             ..default()
-    });
+        },
+    );
 
     let button_row = Node {
-            width: Val::Percent(100.0),
-            flex_direction: FlexDirection::Column,
-            padding: UiRect::all(Val::Px(20.0)),
-            ..default()
-        };
+        width: Val::Percent(100.0),
+        flex_direction: FlexDirection::Column,
+        padding: UiRect::all(Val::Px(20.0)),
+        ..default()
+    };
 
     let title_text = (
-        Text::new("Select Entity"),
-        TextFont{
+        Text::new("Selected Entity:"),
+        TextFont {
             font_size: 32.,
             ..default()
-        }
+        },
     );
-    
+
     // 1. Root node
-    commands.spawn(root)
-        .with_children(|parent| {
+    commands.spawn(root).with_children(|parent| {
         // 2. Side menu panel
-        parent.spawn(side_menu_container)
-        .with_children(|parent| {
+        parent.spawn(side_menu_container).with_children(|parent| {
             // 3a. Menu title
             parent.spawn(title_text);
-            
-            // 3b. Button Row 
-            parent.spawn(button_row)
-            .with_children(|parent| {
-                    match &selected_planet.planet {
-                        Some(planet) => {
-                            parent.spawn(Text::new(format!("planet with id {}", planet.id)));
-                        },
-                        None => {
-                            parent.spawn(Text::new("choose a planet!"));
-                        },
-                    }
-            });
+
+            // 3b. Button Row
+            parent
+                .spawn(button_row)
+                .with_children(|parent| {
+                    parent.spawn((
+                        Text::new("choose a planet!"),
+                        UiText::Name
+                    ));
+                    parent.spawn((
+                        Text::new(""),
+                        UiText::Id
+                    ));
+                    parent.spawn((
+                        Text::new(""),
+                        UiText::Energy
+                    ));
+                    parent.spawn((
+                        Text::new(""),
+                        UiText::Rocket
+                    ));
+                });
         });
     });
 }
@@ -176,19 +199,16 @@ pub(crate) fn button_hover(
 }
 
 pub(crate) fn menu_action(
-    mut action_query: Query<
-        (&Interaction, &ButtonActions),
-        (Changed<Interaction>, With<Button>)
-    >,
-    mut state: ResMut<GameState>
+    mut action_query: Query<(&Interaction, &ButtonActions), (Changed<Interaction>, With<Button>)>,
+    mut state: ResMut<GameState>,
 ) {
-    for(&interaction, action) in &mut action_query {
+    for (&interaction, action) in &mut action_query {
         if interaction == Interaction::Pressed {
             match action {
                 ButtonActions::StartGame => {
                     state.set_if_neq(GameState::Playing);
                     println!("game should start now...");
-                },
+                }
                 ButtonActions::StopGame => {
                     state.set_if_neq(GameState::Paused);
                     println!("game should pause now...");

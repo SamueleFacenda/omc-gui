@@ -7,8 +7,8 @@ edition = "2024"
 bevy = "0.17.0"
 bevy_tweening = "0.14.0"
 dotenv = "0.15.0"
-omc-galaxy = { git = "https://github.com/Advance-Programming-2025/omc-galaxy.git" }
-# omc-galaxy = { path = "/home/davide/omc/omc-galaxy" }
+# omc-galaxy = { git = "https://github.com/Advance-Programming-2025/omc-galaxy.git" }
+omc-galaxy = { path = "/home/davide/omc/omc-galaxy" }
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

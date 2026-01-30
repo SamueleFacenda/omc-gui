@@ -238,7 +238,7 @@ dependencies = [
 [[package]]
 name = "ara_kees"
 version = "0.1.0"
-source = "git+https://github.com/black-adidas-shoe-org/planet.git#f40b6f5a2c5d90e4b25976779b569aa23e087692"
+source = "git+https://github.com/black-adidas-shoe-org/planet.git#50bb23a1f35977893f6a45c23e7ffc284b5175aa"
 dependencies = [
  "common-game",
  "crossbeam-channel",
@@ -1789,9 +1789,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.54"
+version = "1.2.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6354c81bbfd62d9cfa9cb3c773c2b7b2a3a482d569de977fd0e961f6e7c00583"
+checksum = "47b26a0954ae34af09b50f0de26458fa95369a0d478d8236d3f93082b219bd29"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -2559,9 +2559,9 @@ dependencies = [
 
 [[package]]
 name = "find-msvc-tools"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8591b0bcc8a98a64310a2fae1bb3e9b8564dd10e381e6e28010fde8e8e8568db"
+checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "fixedbitset"
@@ -3373,7 +3373,15 @@ checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
 [[package]]
 name = "logging_utils"
 version = "0.1.0"
-source = "git+https://github.com/Advance-Programming-2025/omc-galaxy.git#e90ce7563e3e11ce66cd5e45555b66972627a150"
+dependencies = [
+ "common-game",
+ "crossbeam-channel",
+]
+
+[[package]]
+name = "logging_utils"
+version = "0.1.0"
+source = "git+https://github.com/Advance-Programming-2025/omc-galaxy.git#7c08088c0b2a889c89385671ef84baca500f6493"
 dependencies = [
  "common-game",
  "crossbeam-channel",
@@ -3934,7 +3942,6 @@ dependencies = [
 [[package]]
 name = "omc-galaxy"
 version = "0.1.0"
-source = "git+https://github.com/Advance-Programming-2025/omc-galaxy.git#3a081746d7f73fbba9982b49f67a0c15c174dfa3"
 dependencies = [
  "Planet",
  "ara_kees",
@@ -3945,7 +3952,7 @@ dependencies = [
  "env_logger",
  "immutable_cosmic_borrow",
  "log",
- "logging_utils",
+ "logging_utils 0.1.0",
  "once_cell",
  "one-million-crabs",
  "rand",
@@ -3989,7 +3996,7 @@ dependencies = [
  "env_logger",
  "flexi_logger",
  "log",
- "logging_utils",
+ "logging_utils 0.1.0 (git+https://github.com/Advance-Programming-2025/omc-galaxy.git)",
 ]
 
 [[package]]
@@ -6343,18 +6350,18 @@ checksum = "6df3dc4292935e51816d896edcd52aa30bc297907c26167fec31e2b0c6a32524"
 
 [[package]]
 name = "zerocopy"
-version = "0.8.36"
+version = "0.8.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dafd85c832c1b68bbb4ec0c72c7f6f4fc5179627d2bc7c26b30e4c0cc11e76cc"
+checksum = "7456cf00f0685ad319c5b1693f291a650eaf345e941d082fc4e03df8a03996ac"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.36"
+version = "0.8.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cb7e4e8436d9db52fbd6625dbf2f45243ab84994a72882ec8227b99e72b439a"
+checksum = "1328722bbf2115db7e19d69ebcc15e795719e2d66b60827c6a69a117365e37a0"
 dependencies = [
  "proc-macro2",
  "quote",
