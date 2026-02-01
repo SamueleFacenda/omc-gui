@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_tweening::{CycleCompletedEvent, Tween, TweenAnim, lens::TransformPositionLens};
 use omc_galaxy::Status;
 use rand;
-use std::{f32::consts::TAU, fmt::format, time::Duration};
+use std::{f32::consts::TAU, time::Duration};
 
 use crate::{
     ecs::{
@@ -318,6 +318,9 @@ pub(crate) fn update_selected_entity(
                     }
                     UiPlanetText::Id => {
                         **text = format!("Planet ID: {:?}", planet_id);
+                    }
+                    UiPlanetText::Status => {
+                        **text = format!("Status: {:?}", planet_info.status);
                     }
                     UiPlanetText::Rocket => {
                         if planet_info.rocket {
