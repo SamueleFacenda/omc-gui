@@ -1,5 +1,6 @@
 use bevy::ecs::component::Component;
 
+// Galaxy-centric components
 #[derive(Component)]
 pub(crate) struct Planet {
     pub id: u32,
@@ -16,6 +17,7 @@ pub(crate) struct Edge {
     pub connects: (u32, u32),
 }
 
+/// Button associated actions
 #[derive(Component)]
 pub enum ButtonActions {
     StartGame,
@@ -26,16 +28,24 @@ pub enum ButtonActions {
     Nuke,
 }
 
+/// Planet info marker component
 #[derive(Component)]
 pub enum UiPlanetText {
     Name,
     Id,
+    Status,
     Energy,
-    Rocket,
-    // ResourceList,
-    // ExplorerList,
+    Rocket
 }
 
+/// Button visibility marker component;
+/// makes it so that the buttons tagged 
+/// with this component are rendered only
+/// when a planet is selected.
+#[derive(Component)]
+pub struct PlanetOnlyButton;
+
+/// Explorer info marker component
 #[derive(Component)]
 pub enum UiExplorerText {
     Id,
@@ -44,5 +54,6 @@ pub enum UiExplorerText {
     ResourceBag,
 }
 
+/// Marker component for any loggable action
 #[derive(Component)]
 pub struct LogText;

@@ -49,6 +49,7 @@ pub fn main() -> Result<(), String> {
             ui::game_menu_action,
             ui::manual_planet_action,
             ui::send_scroll_events,
+            ui::update_planet_buttons_visibility,
             galaxy::despawn_celestial,
             galaxy::update_selected_entity,
             game::log_text,

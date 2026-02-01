@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use bevy::prelude::*;
-use omc_galaxy::{Orchestrator, OrchestratorEvent, PlanetInfoMap};
+use omc_galaxy::{Orchestrator, OrchestratorEvent};
 
 use crate::{
     ecs::{

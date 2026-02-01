@@ -4,7 +4,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::ecs::components::{ButtonActions, LogText, UiExplorerText, UiPlanetText};
+use crate::ecs::components::{ButtonActions, LogText, PlanetOnlyButton, UiExplorerText, UiPlanetText};
 use crate::ecs::events::Scroll;
 use crate::ecs::resources::{EntityClickRes, GameState, OrchestratorResource};
 
@@ -218,6 +218,7 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
             parent.spawn(button_row.clone()).with_children(|parent| {
                 parent.spawn((Text::new("choose a planet!"), UiPlanetText::Name));
                 parent.spawn((Text::new(""), UiPlanetText::Id));
+                parent.spawn((Text::new(""), UiPlanetText::Status));
                 parent.spawn((Text::new(""), UiPlanetText::Energy));
                 parent.spawn((Text::new(""), UiPlanetText::Rocket));
                 parent.spawn((Text::new(""), UiExplorerText::Id));
@@ -229,10 +230,14 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
                 parent.spawn((
                     button_factory(Text::new("Send asteroid")),
                     ButtonActions::ManualAsteroid,
+                    Visibility::Hidden, //only in the beginning 
+                    PlanetOnlyButton
                 ));
                 parent.spawn((
                     button_factory(Text::new("Send sunray")),
                     ButtonActions::ManualSunray,
+                    Visibility::Hidden, //only in the beginning
+                    PlanetOnlyButton
                 ));
             });
         });
@@ -314,6 +319,23 @@ pub(crate) fn game_menu_action(
                 }
                 _ => {}
             }
+        }
+    }
+}
+
+pub fn update_planet_buttons_visibility(
+    selected: Res<EntityClickRes>,
+    mut query: Query<&mut Visibility, With<PlanetOnlyButton>>,
+) {
+    if !selected.is_changed() {
+        return;
+    }
+
+    for mut visibility in &mut query {
+        if selected.planet.is_some() {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
         }
     }
 }
