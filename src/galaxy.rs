@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use bevy_tweening::{CycleCompletedEvent, Tween, TweenAnim, lens::TransformPositionLens};
-use omc_galaxy::Status;
-use std::{f32::consts::TAU, time::Duration};
 
-use crate::{
+use std::{f32::consts::TAU, time::Duration};
+use crate::app::AppConfig;
+use super::types::Status;
+use crate::orchestrator::PlanetType;
+
+use super::{
     ecs::{
         components::{Edge, Explorer, Planet, UiExplorerText, UiPlanetText},
         events::{Celestial, CelestialBody, MoveExplorerEvent, PlanetDespawn},
@@ -13,7 +16,7 @@ use crate::{
         assets::{CelestialAssets, ExplorerAssets, PlanetAssets},
         constants::{
             CELESTIAL_RAD, EXP_MATTIA_OFFSET, EXP_SPRITE_NUM, EXP_TOMMY_OFFSET, EXPLORER_SIZE,
-            GALAXY_RADIUS, GAME_TICK, PLANET_RAD, PLANET_SPRITE_NUM,
+            GALAXY_RADIUS, PLANET_RAD, PLANET_SPRITE_NUM,
         },
     },
 };
@@ -49,14 +52,13 @@ pub fn setup(
         let y = GALAXY_RADIUS * angle.sin();
 
         let image_index = match planets.map.get_info(i).unwrap().name {
-            omc_galaxy::utils::registry::PlanetType::BlackAdidasShoe => 0,
-            omc_galaxy::utils::registry::PlanetType::Ciuc => 1,
-            omc_galaxy::utils::registry::PlanetType::HoustonWeHaveABorrow => 2,
-            omc_galaxy::utils::registry::PlanetType::ImmutableCosmicBorrow => 3,
-            omc_galaxy::utils::registry::PlanetType::OneMillionCrabs => 4,
-            omc_galaxy::utils::registry::PlanetType::Rustrelli => 5,
-            omc_galaxy::utils::registry::PlanetType::RustyCrab => 6,
-            omc_galaxy::utils::registry::PlanetType::TheCompilerStrikesBack => 7,
+            PlanetType::PanicOutOfOxygen => 0,
+            PlanetType::RustEze => 1,
+            PlanetType::HoustonWeHaveABorrow => 2,
+            PlanetType::Carbonium => 3,
+            PlanetType::OneMillionCrabs => 4,
+            PlanetType::Rustrelli => 5,
+            PlanetType::TheCompilerStrikesBack => 7,
         };
 
         // Handle is based on Arc, so cloning is fine
@@ -202,7 +204,7 @@ pub fn move_celestial(
 
             let tween = Tween::new(
                 EaseFunction::QuadraticInOut,
-                Duration::from_secs_f32(GAME_TICK / 2.),
+                Duration::from_secs_f32(AppConfig::get().game_tick_seconds / 2.),
                 TransformPositionLens {
                     start: Vec3::new(0., 0., 2.0),
                     end: Vec3::new(t.translation.x, t.translation.y, 2.0),

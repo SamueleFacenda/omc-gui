@@ -3,10 +3,10 @@ use bevy::{
     picking::hover::HoverMap,
     prelude::*,
 };
-
-use crate::ecs::events::Scroll;
-use crate::ecs::resources::{EntityClickRes, GameState, OrchestratorResource};
-use crate::ecs::{
+use crate::gui::types::Status;
+use super::ecs::events::Scroll;
+use super::ecs::resources::{EntityClickRes, GameState, OrchestratorResource};
+use super::ecs::{
     components::{
         ButtonActions, DropdownButton, DropdownItem, DropdownLabel, DropdownList, DropdownRoot,
         Edge, ExplorerOnlyButton, LogText, PlanetOnlyButton, UiExplorerText, UiPlanetText,
@@ -454,13 +454,8 @@ pub(crate) fn game_menu_action(
                     state.set_if_neq(GameState::Override);
                     info!("entering manual override mode");
 
-                    let mut targets = Vec::new();
-                    for id in 0..orchestrator.orchestrator.planets_info.len() {
-                        if !orchestrator.orchestrator.planets_info.is_dead(&(id as u32)) {
-                            targets.push(id as u32);
-                        }
-                    }
-
+                    let targets = orchestrator.orchestrator.get_alive_planets();
+                    
                     println!("targets: {:?}", targets);
 
                     if let Err(s) = orchestrator.orchestrator.send_sunray_from_gui(targets) {
@@ -472,12 +467,7 @@ pub(crate) fn game_menu_action(
                 ButtonActions::Nuke => {
                     state.set_if_neq(GameState::Override);
 
-                    let mut targets = Vec::new();
-                    for id in 0..orchestrator.orchestrator.planets_info.len() {
-                        if !orchestrator.orchestrator.planets_info.is_dead(&(id as u32)) {
-                            targets.push(id as u32);
-                        }
-                    }
+                    let targets = orchestrator.orchestrator.get_alive_planets();
 
                     if let Err(s) = orchestrator.orchestrator.send_asteroid_from_gui(targets) {
                         error!("{}", s);

@@ -1,7 +1,9 @@
 use std::collections::VecDeque;
 
 use bevy::prelude::*;
-use omc_galaxy::{Orchestrator, PlanetInfoMap, utils::ExplorerInfoMap};
+
+use super::super::types::{PlanetInfoMap, ExplorerInfoMap, Status};
+use crate::Orchestrator;
 
 #[derive(Resource)]
 pub struct OrchestratorResource {

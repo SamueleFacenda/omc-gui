@@ -1,9 +1,8 @@
 use std::collections::VecDeque;
 
 use bevy::prelude::*;
-use omc_galaxy::{Orchestrator, OrchestratorEvent};
-
-use crate::{
+use crate::app::AppConfig;
+use super::{
     ecs::{
         components::LogText,
         events::{BasicResEvent, Celestial, CelestialBody, ComplexResEvent, MoveExplorerEvent},
@@ -11,22 +10,31 @@ use crate::{
             EntityClickRes, ExplorerInfoRes, GalaxySnapshot, GameState, GameTimer, LogTextRes,
             OrchestratorResource, PlanetInfoRes,
         },
-    },
-    utils::constants::GAME_TICK,
+    }
 };
+use crate::explorers::ExplorerFactory;
+use super::types::{OrchestratorEvent};
+use crate::orchestrator::{Orchestrator, OrchestratorMode};
 
 pub fn setup_orchestrator(mut commands: Commands) {
-    dotenv::dotenv().ok();
+    let config = AppConfig::get();
 
-    let mut orchestrator = Orchestrator::new().expect("Failed to create orchestrator");
+    let explorers = config.explorers.iter().map(ExplorerFactory::make_from_name).collect();
 
-    let file_path = std::env::var("INPUT_FILE").expect("Set INPUT_FILE in .env or env vars");
+    let mut orchestrator = Orchestrator::new(OrchestratorMode::Manual, config.number_of_planets, explorers)
+        .unwrap_or_else(|e| {
+            log::error!("Failed to create orchestrator: {e}");
+            panic!("Failed to create orchestrator: {e}");
+        });
 
-    orchestrator
-        .initialize_galaxy_by_file(file_path.as_str().trim())
-        .expect("Failed to initialize galaxy");
 
-    let (topology, planet_num) = orchestrator.get_topology();
+    if let Err(e) = orchestrator.manual_init() {
+        log::error!("Failed to initialize orchestrator: {e}");
+        panic!("Failed to initialize orchestrator: {e}");
+    }
+
+
+    let topology = orchestrator.get_topology();
 
     let first_string = String::from("Orchestrator has started.\nWelcome to the game!");
 
@@ -34,15 +42,11 @@ pub fn setup_orchestrator(mut commands: Commands) {
 
     let exp_info = orchestrator.get_explorer_states();
 
-    if let Err(s) = orchestrator.start_all() {
-        error!("{}", s);
-    }
-
     commands.insert_resource(OrchestratorResource { orchestrator });
 
     commands.insert_resource(GalaxySnapshot {
         edges: topology,
-        planet_num,
+        planet_num: config.number_of_planets as usize,
     });
 
     commands.insert_resource(PlanetInfoRes { map: lookup });
@@ -56,7 +60,7 @@ pub fn setup_orchestrator(mut commands: Commands) {
     });
 
     commands.insert_resource(GameTimer(Timer::from_seconds(
-        GAME_TICK,
+        AppConfig::get().game_tick_seconds,
         TimerMode::Repeating,
     )));
 
@@ -83,7 +87,7 @@ pub fn game_loop(
             if timer.is_finished() {
                 println!("ENTERED TIMER");
 
-                let events = std::mem::take(&mut orchestrator.orchestrator.gui_messages);
+                let events = orchestrator.orchestrator.get_gui_events_buffer().drain_events();
 
                 handle_tick(&mut commands, events, log_text);
 
@@ -91,30 +95,37 @@ pub fn game_loop(
                 planets.as_mut().map = orchestrator.orchestrator.get_planets_info();
                 // yeah
                 explorers.as_mut().map = orchestrator.orchestrator.get_explorer_states();
+
                 // launch either an asteroid or a sunray with a random choice
-                let _ = orchestrator.orchestrator.choose_random_action();
+                if let Err(e) = orchestrator.orchestrator.manual_step() {
+                    log::error!("Failed to advance orchestrator step: {e}");
+                    commands.insert_resource(GameState::Paused);
+                }
+
                 // handle all of the previous events
-                let _ = orchestrator.orchestrator.handle_game_messages();
+                if let Err(e) = orchestrator.orchestrator.process_commands() {
+                    log::error!("Failed to process orchestrator commands: {e}");
+                    commands.insert_resource(GameState::Paused);
+                }
 
                 println!("EXITING TIMER");
                 timer.reset();
             }
         }
         GameState::Override => {
-            //if there are manually imputted events, run those immediately
+            //if there are manually inputted events, run those immediately
             //else, keep going
 
-            if orchestrator.orchestrator.gui_messages.len() > 0 {
-                let events = std::mem::take(&mut orchestrator.orchestrator.gui_messages);
+            if orchestrator.orchestrator.get_gui_events_buffer().has_events() {
+                let events = orchestrator.orchestrator.get_gui_events_buffer().drain_events();
                 handle_tick(&mut commands, events, log_text);
 
-                info!(
-                    "haiiiiii {:?} cell state",
-                    orchestrator.orchestrator.planets_info.get_info(4)
-                );
-
                 // handle all of the previous events
-                let _ = orchestrator.orchestrator.handle_game_messages();
+                if let Err(e) = orchestrator.orchestrator.process_commands() {
+                    log::error!("Failed to process orchestrator commands: {e}");
+                    commands.insert_resource(GameState::Paused);
+                }
+
                 // update the planet state map after the events occurred
                 planets.as_mut().map = orchestrator.orchestrator.get_planets_info();
                 explorers.as_mut().map = orchestrator.orchestrator.get_explorer_states();

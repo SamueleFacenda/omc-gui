@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::utils::constants::{EXP_SPRITE_NUM, PLANET_SPRITE_NUM};
+use super::super::utils::constants::{EXP_SPRITE_NUM, PLANET_SPRITE_NUM};
 
 #[derive(Resource)]
 pub(crate) struct PlanetAssets {
