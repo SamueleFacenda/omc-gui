@@ -7,7 +7,8 @@ use common_game::components::resource::ComplexResourceType::Diamond;
 use super::ecs::components::{ButtonActions, DropdownButton, DropdownItem, DropdownLabel, DropdownList, DropdownRoot,
                              Edge, ExplorerOnlyButton, LogText, PlanetOnlyButton, UiExplorerText, UiPlanetText};
 use super::ecs::events::Scroll;
-use super::ecs::resources::{EntityClickRes, ExplorerInfoRes, GameState, OrchestratorResource};
+use super::ecs::resources::{EntityClickRes, ExplorerInfoRes, GameState, OrchestratorResource, PlanetInfoRes};
+use crate::gui::types;
 use crate::orchestrator::OrchestratorManualAction::{GenerateBasic, GenerateComplex, MoveExplorer, SendAsteroid,
                                                     SendSunray};
 
@@ -356,16 +357,14 @@ pub(crate) fn game_menu_action(
                         orchestrator.orchestrator.set_mode_manual();
                     }
 
-                    //TODO call the orchestrator to generate basic resources
-                    error!("function has not been implemented");
+                    // handled in manual explorer action
                 }
                 ButtonActions::CreateComplex => {
                     if state.set_if_neq(GameState::Override) {
                         orchestrator.orchestrator.set_mode_manual();
                     }
 
-                    //TODO call the orchestrator to generate complex resources
-                    error!("function has not been implemented");
+                    // handled in manual explorer action
                 }
                 _ => {}
             }
@@ -442,6 +441,8 @@ pub(crate) fn manual_explorer_action(
     mut action_query: Query<(&Interaction, &ButtonActions), (Changed<Interaction>, With<Button>)>,
     mut orchestrator: ResMut<OrchestratorResource>,
     selected_entity: Res<EntityClickRes>,
+    explorer_status: Res<ExplorerInfoRes>,
+    planet_status: Res<PlanetInfoRes>,
     mut state: ResMut<GameState>
 ) {
     for (&interaction, action) in &mut action_query {
@@ -452,11 +453,21 @@ pub(crate) fn manual_explorer_action(
                         orchestrator.orchestrator.set_mode_manual();
                     }
 
+                    log::info!("scheduling basic resource generation");
+
                     if let Some(explorer_id) = selected_entity.explorer {
-                        orchestrator.orchestrator.schedule_manual_action(GenerateBasic {
-                            explorer_id,
-                            resource: Carbon // TODO placeholder
-                        });
+                        let planet_id = explorer_status.map.get_current_planet(&explorer_id);
+                        if let Some(planet) = planet_status.map.get_info(planet_id) {
+                            let basic_resources = types::get_planet_basic_resources(&planet.name);
+                            if !basic_resources.is_empty() {
+                                let idx = rand::random::<i32>() as usize % basic_resources.len(); // get a random one
+
+                                orchestrator.orchestrator.schedule_manual_action(GenerateBasic {
+                                    explorer_id,
+                                    resource: basic_resources[idx]
+                                });
+                            }
+                        }
                     }
                 }
                 ButtonActions::CreateComplex => {
@@ -465,10 +476,18 @@ pub(crate) fn manual_explorer_action(
                     }
 
                     if let Some(explorer_id) = selected_entity.explorer {
-                        orchestrator.orchestrator.schedule_manual_action(GenerateComplex {
-                            explorer_id,
-                            resource: Diamond // TODO placeholder
-                        })
+                        let planet_id = explorer_status.map.get_current_planet(&explorer_id);
+                        if let Some(planet) = planet_status.map.get_info(planet_id) {
+                            let basic_resources = types::get_planet_complex_resources(&planet.name);
+                            if !basic_resources.is_empty() {
+                                let idx = rand::random::<i32>() as usize % basic_resources.len(); // get a random one
+
+                                orchestrator.orchestrator.schedule_manual_action(GenerateComplex {
+                                    explorer_id,
+                                    resource: basic_resources[idx]
+                                });
+                            }
+                        }
                     }
                 }
                 _ => {}
