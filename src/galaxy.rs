@@ -1,25 +1,19 @@
+use std::f32::consts::TAU;
+use std::time::Duration;
+
 use bevy::prelude::*;
-use bevy_tweening::{CycleCompletedEvent, Tween, TweenAnim, lens::TransformPositionLens};
+use bevy_tweening::lens::TransformPositionLens;
+use bevy_tweening::{CycleCompletedEvent, Tween, TweenAnim};
 
-use std::{f32::consts::TAU, time::Duration};
-use crate::app::AppConfig;
+use super::ecs::components::{Edge, Explorer, Planet, UiExplorerText, UiPlanetText};
+use super::ecs::events::{Celestial, CelestialBody, MoveExplorerEvent, PlanetDespawn};
+use super::ecs::resources::{EntityClickRes, ExplorerInfoRes, GalaxySnapshot, PlanetInfoRes};
 use super::types::Status;
+use super::utils::assets::{CelestialAssets, ExplorerAssets, PlanetAssets};
+use super::utils::constants::{CELESTIAL_RAD, EXP_MATTIA_OFFSET, EXP_SPRITE_NUM, EXP_TOMMY_OFFSET, EXPLORER_SIZE,
+                              GALAXY_RADIUS, PLANET_RAD, PLANET_SPRITE_NUM};
+use crate::app::AppConfig;
 use crate::orchestrator::PlanetType;
-
-use super::{
-    ecs::{
-        components::{Edge, Explorer, Planet, UiExplorerText, UiPlanetText},
-        events::{Celestial, CelestialBody, MoveExplorerEvent, PlanetDespawn},
-        resources::{EntityClickRes, ExplorerInfoRes, GalaxySnapshot, PlanetInfoRes},
-    },
-    utils::{
-        assets::{CelestialAssets, ExplorerAssets, PlanetAssets},
-        constants::{
-            CELESTIAL_RAD, EXP_MATTIA_OFFSET, EXP_SPRITE_NUM, EXP_TOMMY_OFFSET, EXPLORER_SIZE,
-            GALAXY_RADIUS, PLANET_RAD, PLANET_SPRITE_NUM,
-        },
-    },
-};
 
 pub fn setup(
     galaxy: Res<GalaxySnapshot>,
@@ -27,7 +21,7 @@ pub fn setup(
     mut commands: Commands,
     asset_loader: Res<AssetServer>,
     planet_assets: Res<PlanetAssets>,
-    explorer_assets: Res<ExplorerAssets>,
+    explorer_assets: Res<ExplorerAssets>
 ) {
     commands.spawn(Camera2d);
 
@@ -58,7 +52,7 @@ pub fn setup(
             PlanetType::Carbonium => 3,
             PlanetType::OneMillionCrabs => 4,
             PlanetType::Rustrelli => 5,
-            PlanetType::TheCompilerStrikesBack => 7,
+            PlanetType::TheCompilerStrikesBack => 7
         };
 
         // Handle is based on Arc, so cloning is fine
@@ -75,7 +69,7 @@ pub fn setup(
                     ..Default::default()
                 },
                 Transform::from_xyz(x, y, 2.0),
-                Pickable::default(),
+                Pickable::default()
             ))
             .observe(choose_on_click);
 
@@ -83,17 +77,13 @@ pub fn setup(
         if i == cfg.initial_planet_id {
             for j in 0..cfg.explorers.len() {
                 let explorer_image_handle = explorer_assets.handles[j % EXP_SPRITE_NUM].clone();
-                let (offset_x, offset_y): (f32, f32) = if j == 0 {
-                    EXP_TOMMY_OFFSET
-                } else {
-                    EXP_MATTIA_OFFSET
-                };
+                let (offset_x, offset_y): (f32, f32) = if j == 0 { EXP_TOMMY_OFFSET } else { EXP_MATTIA_OFFSET };
                 commands
                     .spawn((
                         Explorer {
                             id: j as u32 + cfg.number_of_planets + 1,
                             current_planet: i,
-                            position_offset: (offset_x, offset_y),
+                            position_offset: (offset_x, offset_y)
                         },
                         Sprite {
                             image: explorer_image_handle,
@@ -101,7 +91,7 @@ pub fn setup(
                             ..Default::default()
                         },
                         Transform::from_xyz(x + offset_x, y - offset_y, 3.0),
-                        Pickable::default(),
+                        Pickable::default()
                     ))
                     .observe(choose_on_click);
             }
@@ -109,11 +99,7 @@ pub fn setup(
     }
 }
 
-pub fn draw_topology(
-    mut commands: Commands,
-    snapshot: Res<GalaxySnapshot>,
-    planets: Query<(&Planet, &Transform)>,
-) {
+pub fn draw_topology(mut commands: Commands, snapshot: Res<GalaxySnapshot>, planets: Query<(&Planet, &Transform)>) {
     if snapshot.is_changed() {
         let gtop = &snapshot.edges; //TODO do something BETTER than this
 
@@ -136,17 +122,13 @@ pub fn draw_topology(
             let midpoint = (start + end) / 2.;
 
             //creates the transform to manipulate the line position
-            let transform = Transform::from_xyz(midpoint.x, midpoint.y, 1.)
-                .with_rotation(Quat::from_rotation_z(segment_rotation));
+            let transform =
+                Transform::from_xyz(midpoint.x, midpoint.y, 1.).with_rotation(Quat::from_rotation_z(segment_rotation));
 
             commands.spawn((
-                Sprite {
-                    color: Color::WHITE,
-                    custom_size: Some(Vec2::new(length, 1.)),
-                    ..default()
-                },
+                Sprite { color: Color::WHITE, custom_size: Some(Vec2::new(length, 1.)), ..default() },
                 transform,
-                Edge { connects: (*a, *b) },
+                Edge { connects: (*a, *b) }
             ));
         }
     }
@@ -157,7 +139,7 @@ pub fn destroy_link(
     mut commands: Commands,
     edge_query: Query<(&Edge, Entity)>,
     planet_query: Query<(&Planet, Entity)>,
-    explorer_query: Query<(&Explorer, Entity)>,
+    explorer_query: Query<(&Explorer, Entity)>
 ) {
     //despawn all its links
     for (e, s) in edge_query {
@@ -185,7 +167,7 @@ pub fn move_celestial(
     event: On<Celestial>,
     mut commands: Commands,
     sprites: Res<CelestialAssets>,
-    planet_query: Query<(&Planet, &Transform)>,
+    planet_query: Query<(&Planet, &Transform)>
 ) {
     info!("MOVE_CELESTIAL: EVENT FROM ID {} ", event.planet_id);
 
@@ -208,23 +190,16 @@ pub fn move_celestial(
                 Duration::from_secs_f32(AppConfig::get().game_tick_seconds / 2.),
                 TransformPositionLens {
                     start: Vec3::new(0., 0., 2.0),
-                    end: Vec3::new(t.translation.x, t.translation.y, 2.0),
-                },
+                    end: Vec3::new(t.translation.x, t.translation.y, 2.0)
+                }
             )
             .with_cycle_completed_event(true);
 
             commands.spawn((
-                Celestial {
-                    kind: event.kind,
-                    planet_id: event.planet_id,
-                },
-                Sprite {
-                    image: sunray_sprite,
-                    custom_size: Some(Vec2::splat(CELESTIAL_RAD * 2.)),
-                    ..default()
-                },
+                Celestial { kind: event.kind, planet_id: event.planet_id },
+                Sprite { image: sunray_sprite, custom_size: Some(Vec2::splat(CELESTIAL_RAD * 2.)), ..default() },
                 Transform::from_xyz(0., 0., 2.0),
-                TweenAnim::new(tween),
+                TweenAnim::new(tween)
             ));
         }
     }
@@ -232,10 +207,7 @@ pub fn move_celestial(
 
 pub fn move_explorer(
     event: On<MoveExplorerEvent>,
-    mut param_set: ParamSet<(
-        Query<(&mut Explorer, &mut Transform)>,
-        Query<(&Planet, &Transform), Without<Explorer>>,
-    )>,
+    mut param_set: ParamSet<(Query<(&mut Explorer, &mut Transform)>, Query<(&Planet, &Transform), Without<Explorer>>)>
 ) {
     let (explorer_id, planet_id) = (event.id, event.destination);
 
@@ -259,14 +231,11 @@ pub fn move_explorer(
                     *transform = Transform::from_translation(Vec3 {
                         x: target.translation.x + explorer.position_offset.0,
                         y: target.translation.y + explorer.position_offset.1,
-                        z: 3.,
+                        z: 3.
                     });
                 }
                 None => {
-                    warn!(
-                        "explorer tried to move to planet that doesn't exist ({})",
-                        planet_id
-                    );
+                    warn!("explorer tried to move to planet that doesn't exist ({})", planet_id);
                 }
             }
         }
@@ -278,7 +247,7 @@ pub(crate) fn despawn_celestial(
     mut commands: Commands,
     mut reader: MessageReader<CycleCompletedEvent>,
     status: Res<PlanetInfoRes>,
-    celestial: Query<&Celestial>,
+    celestial: Query<&Celestial>
 ) {
     for event in reader.read() {
         info!("animation finished!");
@@ -287,9 +256,7 @@ pub(crate) fn despawn_celestial(
             if c.kind == CelestialBody::Asteroid {
                 if status.map.get_status(&c.planet_id) == Status::Dead {
                     info!("Triggerig PlanetDespawn for {}", c.planet_id);
-                    commands.trigger(PlanetDespawn {
-                        planet_id: c.planet_id,
-                    });
+                    commands.trigger(PlanetDespawn { planet_id: c.planet_id });
                 }
             }
         }
@@ -300,11 +267,8 @@ pub(crate) fn despawn_celestial(
 
 pub(crate) fn choose_on_click(
     click: On<Pointer<Click>>,
-    mut params: ParamSet<(
-        Query<(&mut Sprite, &Planet)>,
-        Query<(&mut Sprite, &Explorer)>,
-    )>,
-    mut chosen_entity: ResMut<EntityClickRes>,
+    mut params: ParamSet<(Query<(&mut Sprite, &Planet)>, Query<(&mut Sprite, &Explorer)>)>,
+    mut chosen_entity: ResMut<EntityClickRes>
 ) {
     info!("Picking event was triggered");
 
@@ -340,17 +304,14 @@ pub(crate) fn update_selected_entity(
     selected_entity: Res<EntityClickRes>,
     planet_status: Res<PlanetInfoRes>,
     explorer_status: Res<ExplorerInfoRes>,
-    mut params: ParamSet<(
-        Query<(&mut Text, &UiPlanetText)>,
-        Query<(&mut Text, &UiExplorerText)>,
-    )>,
+    mut params: ParamSet<(Query<(&mut Text, &UiPlanetText)>, Query<(&mut Text, &UiExplorerText)>)>
 ) {
     // exit early if the state is the same to avoid extra computation
     if !selected_entity.is_changed() && !planet_status.is_changed() {
         return;
     }
 
-    info!("update_selected_entity: {:?}", selected_entity);
+    trace!("update_selected_entity: {:?}", selected_entity);
 
     if let Some(planet_id) = selected_entity.planet {
         info!("updating planet {}", planet_id);
@@ -368,13 +329,12 @@ pub(crate) fn update_selected_entity(
                     UiPlanetText::Status => {
                         **text = format!("Status: {:?}", planet_info.status);
                     }
-                    UiPlanetText::Rocket => {
+                    UiPlanetText::Rocket =>
                         if planet_info.rocket {
                             **text = "Rocket: AVAILABLE".to_string();
                         } else {
                             **text = "Rocket: NOT PRESENT".to_string();
-                        }
-                    }
+                        },
                     UiPlanetText::Energy => {
                         let current_energy = planet_info.charged_cells_count;
                         let max_energy = planet_info.energy_cells.len();
@@ -402,7 +362,7 @@ pub(crate) fn update_selected_entity(
                         let status = match explorer_info.status {
                             Status::Dead => "dead".to_string(),
                             Status::Paused => "paused".to_string(),
-                            Status::Running => "running".to_string(),
+                            Status::Running => "running".to_string()
                         };
                         **text = format!("Status: {}", status);
                     }

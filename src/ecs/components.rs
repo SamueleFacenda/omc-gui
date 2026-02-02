@@ -3,19 +3,19 @@ use bevy::ecs::component::Component;
 // Galaxy-centric components
 #[derive(Component)]
 pub(crate) struct Planet {
-    pub id: u32,
+    pub id: u32
 }
 
 #[derive(Component)]
 pub(crate) struct Explorer {
     pub id: u32,
     pub current_planet: u32,
-    pub position_offset: (f32, f32),
+    pub position_offset: (f32, f32)
 }
 
 #[derive(Component)]
 pub(crate) struct Edge {
-    pub connects: (u32, u32),
+    pub connects: (u32, u32)
 }
 
 /// Button associated actions
@@ -28,7 +28,7 @@ pub enum ButtonActions {
     Blind,
     Nuke,
     CreateBasic,
-    CreateComplex,
+    CreateComplex
 }
 
 /// Planet info marker component
@@ -38,7 +38,7 @@ pub enum UiPlanetText {
     Id,
     Status,
     Energy,
-    Rocket,
+    Rocket
 }
 
 /// Button visibility marker component;
@@ -57,7 +57,7 @@ pub enum UiExplorerText {
     Id,
     Visiting,
     Status,
-    ResourceBag,
+    ResourceBag
 }
 
 /// Marker component for any loggable action
@@ -79,5 +79,5 @@ pub struct DropdownList;
 #[derive(Component)]
 pub struct DropdownItem {
     pub explorer_id: u32,
-    pub planet_id: u32,
+    pub planet_id: u32
 }

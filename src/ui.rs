@@ -1,21 +1,15 @@
-use bevy::{
-    input::mouse::{MouseScrollUnit, MouseWheel},
-    picking::hover::HoverMap,
-    prelude::*,
-};
+use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
+use bevy::picking::hover::HoverMap;
+use bevy::prelude::*;
 use common_game::components::resource::BasicResourceType::Carbon;
 use common_game::components::resource::ComplexResourceType::Diamond;
-use crate::gui::types::Status;
-use crate::orchestrator::OrchestratorManualAction::{GenerateBasic, GenerateComplex, MoveExplorer, SendAsteroid, SendSunray};
+
+use super::ecs::components::{ButtonActions, DropdownButton, DropdownItem, DropdownLabel, DropdownList, DropdownRoot,
+                             Edge, ExplorerOnlyButton, LogText, PlanetOnlyButton, UiExplorerText, UiPlanetText};
 use super::ecs::events::Scroll;
-use super::ecs::resources::{EntityClickRes, GameState, OrchestratorResource};
-use super::ecs::{
-    components::{
-        ButtonActions, DropdownButton, DropdownItem, DropdownLabel, DropdownList, DropdownRoot,
-        Edge, ExplorerOnlyButton, LogText, PlanetOnlyButton, UiExplorerText, UiPlanetText,
-    },
-    resources::ExplorerInfoRes,
-};
+use super::ecs::resources::{EntityClickRes, ExplorerInfoRes, GameState, OrchestratorResource};
+use crate::orchestrator::OrchestratorManualAction::{GenerateBasic, GenerateComplex, MoveExplorer, SendAsteroid,
+                                                    SendSunray};
 
 pub(crate) fn draw_game_options_menu(mut commands: Commands) {
     let root = Node {
@@ -23,52 +17,28 @@ pub(crate) fn draw_game_options_menu(mut commands: Commands) {
         height: Val::Percent(100.0),
         // Right aligned
         justify_content: JustifyContent::FlexEnd,
-        margin: UiRect {
-            left: Val::Auto,
-            ..default()
-        },
+        margin: UiRect { left: Val::Auto, ..default() },
         ..default()
     };
 
-    let side_menu_container = (
-        BackgroundColor {
-            0: Color::Srgba(Srgba {
-                red: 0.12,
-                green: 0.18,
-                blue: 0.24,
-                alpha: 0.7,
-            }),
-        },
-        Node {
+    let side_menu_container =
+        (BackgroundColor { 0: Color::Srgba(Srgba { red: 0.12, green: 0.18, blue: 0.24, alpha: 0.7 }) }, Node {
             width: Val::Px(350.0),
             height: Val::Percent(100.0),
             flex_direction: FlexDirection::Column,
             padding: UiRect::all(Val::Px(20.0)),
             ..default()
-        },
-    );
+        });
 
-    let button_row = Node {
-        width: Val::Percent(100.0),
-        flex_direction: FlexDirection::Row,
+    let button_row = Node { width: Val::Percent(100.0), flex_direction: FlexDirection::Row, ..default() };
+
+    let log_square = (BackgroundColor(Color::Srgba(Srgba { red: 0., green: 0., blue: 0., alpha: 0.6 })), Node {
+        flex_direction: FlexDirection::Column,
+        align_self: AlignSelf::Stretch,
+        height: Val::Percent(50.),
+        overflow: Overflow::scroll_y(),
         ..default()
-    };
-
-    let log_square = (
-        BackgroundColor(Color::Srgba(Srgba {
-            red: 0.,
-            green: 0.,
-            blue: 0.,
-            alpha: 0.6,
-        })),
-        Node {
-            flex_direction: FlexDirection::Column,
-            align_self: AlignSelf::Stretch,
-            height: Val::Percent(50.),
-            overflow: Overflow::scroll_y(),
-            ..default()
-        },
-    );
+    });
 
     let title_text = Text::new("Galaxy Menu");
 
@@ -87,16 +57,10 @@ pub(crate) fn draw_game_options_menu(mut commands: Commands) {
             BorderRadius::all(Val::Px(15.)),
             children![(
                 text,
-                TextFont {
-                    font_size: 12.,
-                    ..default()
-                },
-                TextLayout {
-                    justify: Justify::Center,
-                    ..default()
-                },
+                TextFont { font_size: 12., ..default() },
+                TextLayout { justify: Justify::Center, ..default() },
                 TextColor(Color::srgb(0.97, 0.98, 0.96))
-            )],
+            )]
         )
     };
 
@@ -118,10 +82,7 @@ pub(crate) fn draw_game_options_menu(mut commands: Commands) {
 
             parent.spawn(button_row.clone()).with_children(|parent| {
                 //4a. button 1
-                parent.spawn((
-                    button_factory(Text::new("Restart")),
-                    ButtonActions::StartGame,
-                ));
+                parent.spawn((button_factory(Text::new("Restart")), ButtonActions::StartGame));
 
                 //4b. button 2
                 parent.spawn((button_factory(Text::new("Blind")), ButtonActions::Blind));
@@ -132,10 +93,7 @@ pub(crate) fn draw_game_options_menu(mut commands: Commands) {
                 parent.spawn((button_factory(Text::new("Nuke")), ButtonActions::Nuke));
 
                 //4b. button 2
-                parent.spawn((
-                    button_factory(Text::new("Explorer Messages")),
-                    ButtonActions::StopGame,
-                ));
+                parent.spawn((button_factory(Text::new("Explorer Messages")), ButtonActions::StopGame));
             });
             parent.spawn(log_square).with_children(|parent| {
                 parent.spawn((Text::new(""), LogText));
@@ -154,24 +112,15 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
         ..default()
     };
 
-    let side_menu_container = (
-        BackgroundColor {
-            0: Color::Srgba(Srgba {
-                red: 0.12,
-                green: 0.18,
-                blue: 0.18,
-                alpha: 0.8,
-            }),
-        },
-        Node {
+    let side_menu_container =
+        (BackgroundColor { 0: Color::Srgba(Srgba { red: 0.12, green: 0.18, blue: 0.18, alpha: 0.8 }) }, Node {
             width: Val::Px(350.0),
             height: Val::Percent(100.0),
             flex_direction: FlexDirection::Column,
             align_items: AlignItems::Center,
             padding: UiRect::all(Val::Px(20.0)),
             ..default()
-        },
-    );
+        });
 
     let button_row = Node {
         width: Val::Percent(100.0),
@@ -180,13 +129,7 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
         ..default()
     };
 
-    let title_text = (
-        Text::new("Selected Entity:"),
-        TextFont {
-            font_size: 32.,
-            ..default()
-        },
-    );
+    let title_text = (Text::new("Selected Entity:"), TextFont { font_size: 32., ..default() });
 
     let button_factory = |text: Text| {
         (
@@ -203,16 +146,10 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
             BorderRadius::all(Val::Px(15.)),
             children![(
                 text,
-                TextFont {
-                    font_size: 12.,
-                    ..default()
-                },
-                TextLayout {
-                    justify: Justify::Center,
-                    ..default()
-                },
+                TextFont { font_size: 12., ..default() },
+                TextLayout { justify: Justify::Center, ..default() },
                 TextColor(Color::srgb(0.97, 0.98, 0.96))
-            )],
+            )]
         )
     };
 
@@ -226,71 +163,25 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
             // 3b. Button Row
             parent.spawn(button_row.clone()).with_children(|parent| {
                 parent.spawn((Text::new("choose a planet!"), UiPlanetText::Name));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    PlanetOnlyButton,
-                    UiPlanetText::Id,
-                ));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    PlanetOnlyButton,
-                    UiPlanetText::Status,
-                ));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    PlanetOnlyButton,
-                    UiPlanetText::Energy,
-                ));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    PlanetOnlyButton,
-                    UiPlanetText::Rocket,
-                ));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    ExplorerOnlyButton,
-                    UiExplorerText::Id,
-                ));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    ExplorerOnlyButton,
-                    UiExplorerText::Status,
-                ));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    ExplorerOnlyButton,
-                    UiExplorerText::Visiting,
-                ));
-                parent.spawn((
-                    Text::new(""),
-                    Visibility::Hidden,
-                    ExplorerOnlyButton,
-                    UiExplorerText::ResourceBag,
-                ));
+                parent.spawn((Text::new(""), Visibility::Hidden, PlanetOnlyButton, UiPlanetText::Id));
+                parent.spawn((Text::new(""), Visibility::Hidden, PlanetOnlyButton, UiPlanetText::Status));
+                parent.spawn((Text::new(""), Visibility::Hidden, PlanetOnlyButton, UiPlanetText::Energy));
+                parent.spawn((Text::new(""), Visibility::Hidden, PlanetOnlyButton, UiPlanetText::Rocket));
+                parent.spawn((Text::new(""), Visibility::Hidden, ExplorerOnlyButton, UiExplorerText::Id));
+                parent.spawn((Text::new(""), Visibility::Hidden, ExplorerOnlyButton, UiExplorerText::Status));
+                parent.spawn((Text::new(""), Visibility::Hidden, ExplorerOnlyButton, UiExplorerText::Visiting));
+                parent.spawn((Text::new(""), Visibility::Hidden, ExplorerOnlyButton, UiExplorerText::ResourceBag));
             });
 
             parent
                 .spawn((
                     button_row.clone(),
                     Visibility::Hidden, //only in the beginning
-                    PlanetOnlyButton,
+                    PlanetOnlyButton
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
-                        button_factory(Text::new("Send asteroid")),
-                        ButtonActions::ManualAsteroid,
-                    ));
-                    parent.spawn((
-                        button_factory(Text::new("Send sunray")),
-                        ButtonActions::ManualSunray,
-                    ));
+                    parent.spawn((button_factory(Text::new("Send asteroid")), ButtonActions::ManualAsteroid));
+                    parent.spawn((button_factory(Text::new("Send sunray")), ButtonActions::ManualSunray));
                 });
 
             parent.spawn(button_row.clone()).with_children(|parent| {
@@ -298,24 +189,20 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
                     button_factory(Text::new("Make basic resource")),
                     ButtonActions::CreateBasic,
                     Visibility::Hidden, //only in the beginning
-                    ExplorerOnlyButton,
+                    ExplorerOnlyButton
                 ));
                 parent.spawn((
                     button_factory(Text::new("Make complex resource")),
                     ButtonActions::CreateComplex,
                     Visibility::Hidden, //only in the beginning
-                    ExplorerOnlyButton,
+                    ExplorerOnlyButton
                 ));
                 parent
                     .spawn((
-                        Node {
-                            width: Val::Px(220.0),
-                            flex_direction: FlexDirection::Column,
-                            ..default()
-                        },
+                        Node { width: Val::Px(220.0), flex_direction: FlexDirection::Column, ..default() },
                         Visibility::Hidden,
                         ExplorerOnlyButton,
-                        DropdownRoot,
+                        DropdownRoot
                     ))
                     .with_children(|parent| {
                         // Button
@@ -329,26 +216,20 @@ pub(crate) fn draw_entity_info_menu(mut commands: Commands) {
                                     padding: UiRect::horizontal(Val::Px(8.0)),
                                     ..default()
                                 },
-                                DropdownButton,
+                                DropdownButton
                             ))
                             .with_children(|button| {
                                 button.spawn((
                                     Text::new("Select destination"),
-                                    TextFont {
-                                        font_size: 16.0,
-                                        ..Default::default()
-                                    },
-                                    DropdownLabel,
+                                    TextFont { font_size: 16.0, ..Default::default() },
+                                    DropdownLabel
                                 ));
                             });
 
                         parent.spawn((
-                            Node {
-                                flex_direction: FlexDirection::Column,
-                                ..default()
-                            },
+                            Node { flex_direction: FlexDirection::Column, ..default() },
                             BackgroundColor(Color::Srgba(Srgba::new(0.15, 0.15, 0.15, 1.))),
-                            DropdownList,
+                            DropdownList
                         ));
                     });
             });
@@ -361,7 +242,7 @@ pub fn populate_dropdown(
     edges: Query<&Edge>,
     list: Single<Entity, With<DropdownList>>,
     explorer_status: Res<ExplorerInfoRes>,
-    target_entity: Res<EntityClickRes>, // or however you store it
+    target_entity: Res<EntityClickRes> // or however you store it
 ) {
     if target_entity.explorer.is_none() || !target_entity.is_changed() {
         return;
@@ -395,29 +276,20 @@ pub fn populate_dropdown(
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    DropdownItem {
-                        planet_id,
-                        explorer_id,
-                    },
+                    DropdownItem { planet_id, explorer_id }
                 ))
                 .with_children(|item| {
-                    item.spawn((
-                        Text::new(format!("Planet {}", planet_id)),
-                        TextFont {
-                            font_size: 14.0,
-                            ..Default::default()
-                        },
-                    ));
+                    item.spawn((Text::new(format!("Planet {}", planet_id)), TextFont {
+                        font_size: 14.0,
+                        ..Default::default()
+                    }));
                 });
         }
     });
 }
 
 pub(crate) fn button_hover(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut interaction_query: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<Button>)>
 ) {
     for (&interaction, mut color) in &mut interaction_query {
         match interaction {
@@ -438,22 +310,20 @@ pub(crate) fn button_hover(
 pub(crate) fn game_menu_action(
     mut action_query: Query<(&Interaction, &ButtonActions), (Changed<Interaction>, With<Button>)>,
     mut orchestrator: ResMut<OrchestratorResource>,
-    mut state: ResMut<GameState>,
+    mut state: ResMut<GameState>
 ) {
     for (&interaction, action) in &mut action_query {
         if interaction == Interaction::Pressed {
             match action {
-                ButtonActions::StartGame => {
+                ButtonActions::StartGame =>
                     if state.set_if_neq(GameState::Playing) {
                         orchestrator.orchestrator.set_mode_auto();
                         info!("game started");
-                    }
-                }
-                ButtonActions::StopGame => {
+                    },
+                ButtonActions::StopGame =>
                     if state.set_if_neq(GameState::Paused) {
                         println!("game should pause now...");
-                    }
-                }
+                    },
                 ButtonActions::Blind => {
                     if state.set_if_neq(GameState::Override) {
                         info!("entering manual override mode");
@@ -478,7 +348,7 @@ pub(crate) fn game_menu_action(
                     let targets = orchestrator.orchestrator.get_alive_planets();
 
                     for planet_id in targets {
-                        orchestrator.orchestrator.schedule_manual_action(SendAsteroid {planet_id})
+                        orchestrator.orchestrator.schedule_manual_action(SendAsteroid { planet_id })
                     }
                 }
                 ButtonActions::CreateBasic => {
@@ -505,7 +375,7 @@ pub(crate) fn game_menu_action(
 
 pub fn update_planet_buttons_visibility(
     selected: Res<EntityClickRes>,
-    mut query: Query<&mut Visibility, With<PlanetOnlyButton>>,
+    mut query: Query<&mut Visibility, With<PlanetOnlyButton>>
 ) {
     if !selected.is_changed() {
         return;
@@ -522,7 +392,7 @@ pub fn update_planet_buttons_visibility(
 
 pub fn update_explorer_buttons_visibility(
     selected: Res<EntityClickRes>,
-    mut query: Query<&mut Visibility, With<ExplorerOnlyButton>>,
+    mut query: Query<&mut Visibility, With<ExplorerOnlyButton>>
 ) {
     if !selected.is_changed() {
         return;
@@ -541,7 +411,7 @@ pub(crate) fn manual_planet_action(
     mut action_query: Query<(&Interaction, &ButtonActions), (Changed<Interaction>, With<Button>)>,
     mut orchestrator: ResMut<OrchestratorResource>,
     selected_planet: Res<EntityClickRes>,
-    mut state: ResMut<GameState>,
+    mut state: ResMut<GameState>
 ) {
     for (&interaction, action) in &mut action_query {
         if interaction == Interaction::Pressed {
@@ -551,7 +421,7 @@ pub(crate) fn manual_planet_action(
                         orchestrator.orchestrator.set_mode_manual();
                     }
                     if let Some(planet_id) = selected_planet.planet {
-                        orchestrator.orchestrator.schedule_manual_action(SendAsteroid {planet_id});
+                        orchestrator.orchestrator.schedule_manual_action(SendAsteroid { planet_id });
                     }
                 }
                 ButtonActions::ManualSunray => {
@@ -559,7 +429,7 @@ pub(crate) fn manual_planet_action(
                         orchestrator.orchestrator.set_mode_manual();
                     }
                     if let Some(planet_id) = selected_planet.planet {
-                        orchestrator.orchestrator.schedule_manual_action(SendSunray {planet_id});
+                        orchestrator.orchestrator.schedule_manual_action(SendSunray { planet_id });
                     }
                 }
                 _ => {}
@@ -572,7 +442,7 @@ pub(crate) fn manual_explorer_action(
     mut action_query: Query<(&Interaction, &ButtonActions), (Changed<Interaction>, With<Button>)>,
     mut orchestrator: ResMut<OrchestratorResource>,
     selected_entity: Res<EntityClickRes>,
-    mut state: ResMut<GameState>,
+    mut state: ResMut<GameState>
 ) {
     for (&interaction, action) in &mut action_query {
         if interaction == Interaction::Pressed {
@@ -583,12 +453,10 @@ pub(crate) fn manual_explorer_action(
                     }
 
                     if let Some(explorer_id) = selected_entity.explorer {
-                        orchestrator.orchestrator.schedule_manual_action(
-                            GenerateBasic {
-                                explorer_id,
-                                resource: Carbon, // TODO placeholder
-                            },
-                        );
+                        orchestrator.orchestrator.schedule_manual_action(GenerateBasic {
+                            explorer_id,
+                            resource: Carbon // TODO placeholder
+                        });
                     }
                 }
                 ButtonActions::CreateComplex => {
@@ -599,7 +467,7 @@ pub(crate) fn manual_explorer_action(
                     if let Some(explorer_id) = selected_entity.explorer {
                         orchestrator.orchestrator.schedule_manual_action(GenerateComplex {
                             explorer_id,
-                            resource: Diamond, // TODO placeholder
+                            resource: Diamond // TODO placeholder
                         })
                     }
                 }
@@ -612,22 +480,17 @@ pub(crate) fn manual_explorer_action(
 pub(crate) fn explorer_move_action(
     mut action_query: Query<(&Interaction, &DropdownItem), (Changed<Interaction>, With<Button>)>,
     mut orchestrator: ResMut<OrchestratorResource>,
-    selected_entity: Res<EntityClickRes>,
-    mut state: ResMut<GameState>,
+    mut state: ResMut<GameState>
 ) {
     for (&interaction, action) in &mut action_query {
         if interaction == Interaction::Pressed {
             if state.set_if_neq(GameState::Override) {
                 orchestrator.orchestrator.set_mode_manual();
             }
-            if let Some(_planet_id) = selected_entity.planet {
-                orchestrator.orchestrator.schedule_manual_action(
-                    MoveExplorer {
-                        explorer_id: action.explorer_id,
-                        destination_planet_id: action.planet_id,
-                    }
-                );
-            }
+            orchestrator.orchestrator.schedule_manual_action(MoveExplorer {
+                explorer_id: action.explorer_id,
+                destination_planet_id: action.planet_id
+            });
         }
     }
 }
@@ -637,7 +500,7 @@ pub(crate) fn send_scroll_events(
     mut mouse_wheel_reader: MessageReader<MouseWheel>,
     hover_map: Res<HoverMap>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for mouse_wheel in mouse_wheel_reader.read() {
         let mut delta = -Vec2::new(mouse_wheel.x, mouse_wheel.y);
@@ -658,10 +521,7 @@ pub(crate) fn send_scroll_events(
     }
 }
 
-pub(crate) fn on_scroll_handler(
-    mut scroll: On<Scroll>,
-    mut query: Query<(&mut ScrollPosition, &Node, &ComputedNode)>,
-) {
+pub(crate) fn on_scroll_handler(mut scroll: On<Scroll>, mut query: Query<(&mut ScrollPosition, &Node, &ComputedNode)>) {
     let Ok((mut scroll_position, node, computed)) = query.get_mut(scroll.entity) else {
         return;
     };
@@ -671,11 +531,7 @@ pub(crate) fn on_scroll_handler(
     let delta = &mut scroll.delta;
     if node.overflow.x == OverflowAxis::Scroll && delta.x != 0. {
         // Is this node already scrolled all the way in the direction of the scroll?
-        let max = if delta.x > 0. {
-            scroll_position.x >= max_offset.x
-        } else {
-            scroll_position.x <= 0.
-        };
+        let max = if delta.x > 0. { scroll_position.x >= max_offset.x } else { scroll_position.x <= 0. };
 
         if !max {
             scroll_position.x += delta.x;
@@ -686,11 +542,7 @@ pub(crate) fn on_scroll_handler(
 
     if node.overflow.y == OverflowAxis::Scroll && delta.y != 0. {
         // Is this node already scrolled all the way in the direction of the scroll?
-        let max = if delta.y > 0. {
-            scroll_position.y >= max_offset.y
-        } else {
-            scroll_position.y <= 0.
-        };
+        let max = if delta.y > 0. { scroll_position.y >= max_offset.y } else { scroll_position.y <= 0. };
 
         if !max {
             scroll_position.y += delta.y;

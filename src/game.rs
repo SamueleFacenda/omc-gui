@@ -1,19 +1,14 @@
 use std::collections::VecDeque;
 
 use bevy::prelude::*;
+
+use super::ecs::components::LogText;
+use super::ecs::events::{BasicResEvent, Celestial, CelestialBody, ComplexResEvent, MoveExplorerEvent};
+use super::ecs::resources::{EntityClickRes, ExplorerInfoRes, GalaxySnapshot, GameState, GameTimer, LogTextRes,
+                            OrchestratorResource, PlanetInfoRes};
+use super::types::OrchestratorEvent;
 use crate::app::AppConfig;
-use super::{
-    ecs::{
-        components::LogText,
-        events::{BasicResEvent, Celestial, CelestialBody, ComplexResEvent, MoveExplorerEvent},
-        resources::{
-            EntityClickRes, ExplorerInfoRes, GalaxySnapshot, GameState, GameTimer, LogTextRes,
-            OrchestratorResource, PlanetInfoRes,
-        },
-    }
-};
 use crate::explorers::ExplorerFactory;
-use super::types::{OrchestratorEvent};
 use crate::orchestrator::{Orchestrator, OrchestratorMode};
 
 pub fn setup_orchestrator(mut commands: Commands) {
@@ -27,12 +22,10 @@ pub fn setup_orchestrator(mut commands: Commands) {
             panic!("Failed to create orchestrator: {e}");
         });
 
-
     if let Err(e) = orchestrator.manual_init() {
         log::error!("Failed to initialize orchestrator: {e}");
         panic!("Failed to initialize orchestrator: {e}");
     }
-
 
     let topology = orchestrator.get_topology();
 
@@ -44,10 +37,7 @@ pub fn setup_orchestrator(mut commands: Commands) {
 
     commands.insert_resource(OrchestratorResource { orchestrator });
 
-    commands.insert_resource(GalaxySnapshot {
-        edges: topology,
-        planet_num: config.number_of_planets as usize,
-    });
+    commands.insert_resource(GalaxySnapshot { edges: topology, planet_num: config.number_of_planets as usize });
 
     commands.insert_resource(PlanetInfoRes { map: lookup });
 
@@ -55,19 +45,11 @@ pub fn setup_orchestrator(mut commands: Commands) {
 
     commands.insert_resource(GameState::WaitingStart);
 
-    commands.insert_resource(LogTextRes {
-        text: VecDeque::from([first_string]),
-    });
+    commands.insert_resource(LogTextRes { text: VecDeque::from([first_string]) });
 
-    commands.insert_resource(GameTimer(Timer::from_seconds(
-        AppConfig::get().game_tick_seconds,
-        TimerMode::Repeating,
-    )));
+    commands.insert_resource(GameTimer(Timer::from_seconds(AppConfig::get().game_tick_seconds, TimerMode::Repeating)));
 
-    commands.insert_resource(EntityClickRes {
-        planet: None,
-        explorer: None,
-    });
+    commands.insert_resource(EntityClickRes { planet: None, explorer: None });
 }
 
 pub fn game_loop(
@@ -78,7 +60,7 @@ pub fn game_loop(
     mut timer: ResMut<GameTimer>,
     log_text: ResMut<LogTextRes>,
     state: Res<GameState>,
-    time: Res<Time>,
+    time: Res<Time>
 ) {
     match *state {
         GameState::Playing => {
@@ -128,11 +110,7 @@ pub fn game_loop(
     }
 }
 
-fn handle_tick(
-    commands: &mut Commands,
-    events: Vec<OrchestratorEvent>,
-    mut log_text: ResMut<LogTextRes>,
-) {
+fn handle_tick(commands: &mut Commands, events: Vec<OrchestratorEvent>, mut log_text: ResMut<LogTextRes>) {
     for ev in events {
         match ev {
             OrchestratorEvent::PlanetDestroyed { planet_id } => {
@@ -142,14 +120,8 @@ fn handle_tick(
             }
             OrchestratorEvent::SunrayReceived { planet_id } => {
                 info!("game-loop: planet {} got a sunray (UI update), ", planet_id);
-                commands.trigger(Celestial {
-                    planet_id,
-                    kind: CelestialBody::Sunray,
-                });
-                update_logs(
-                    &mut log_text,
-                    format!("planet {} received a sunray\n", planet_id),
-                );
+                commands.trigger(Celestial { planet_id, kind: CelestialBody::Sunray });
+                update_logs(&mut log_text, format!("planet {} received a sunray\n", planet_id));
             }
             OrchestratorEvent::SunraySent { planet_id } => {
                 info!("game-loop: planet {} should get a sunray, ", planet_id);
@@ -157,61 +129,26 @@ fn handle_tick(
             }
             OrchestratorEvent::AsteroidSent { planet_id } => {
                 info!("game-loop: planet {} should get an asteroid, ", planet_id);
-                commands.trigger(Celestial {
-                    planet_id,
-                    kind: CelestialBody::Asteroid,
-                });
-                update_logs(
-                    &mut log_text,
-                    format!("planet {} received an asteroid\n", planet_id),
-                );
+                commands.trigger(Celestial { planet_id, kind: CelestialBody::Asteroid });
+                update_logs(&mut log_text, format!("planet {} received an asteroid\n", planet_id));
             }
-            OrchestratorEvent::ExplorerMoved {
-                explorer_id,
-                destination,
-            } => {
-                info!(
-                    "game-loop: explorer {} has moved to planet {}",
-                    explorer_id, destination
-                );
-                commands.trigger(MoveExplorerEvent {
-                    id: explorer_id,
-                    destination,
-                });
+            OrchestratorEvent::ExplorerMoved { explorer_id, destination } => {
+                info!("game-loop: explorer {} has moved to planet {}", explorer_id, destination);
+                commands.trigger(MoveExplorerEvent { id: explorer_id, destination });
             }
-            OrchestratorEvent::BasicResourceGenerated {
-                explorer_id,
-                resource,
-            } => {
-                info!(
-                    "game-loop: explorer {} has generated basic resource {:?}",
-                    explorer_id, resource
-                );
-                commands.trigger(BasicResEvent {
-                    id: explorer_id,
-                    resource,
-                });
+            OrchestratorEvent::BasicResourceGenerated { explorer_id, resource } => {
+                info!("game-loop: explorer {} has generated basic resource {:?}", explorer_id, resource);
+                commands.trigger(BasicResEvent { id: explorer_id, resource });
             }
-            OrchestratorEvent::ComplexResourceGenerated {
-                explorer_id,
-                resource,
-            } => {
-                info!(
-                    "game-loop: explorer {} has generated complex resource {:?}",
-                    explorer_id, resource
-                );
-                commands.trigger(ComplexResEvent {
-                    id: explorer_id,
-                    resource,
-                });
+            OrchestratorEvent::ComplexResourceGenerated { explorer_id, resource } => {
+                info!("game-loop: explorer {} has generated complex resource {:?}", explorer_id, resource);
+                commands.trigger(ComplexResEvent { id: explorer_id, resource });
             }
         }
     }
 }
 
-fn update_logs(log_text: &mut ResMut<LogTextRes>, event_to_push: String) {
-    log_text.text.push_front(event_to_push);
-}
+fn update_logs(log_text: &mut ResMut<LogTextRes>, event_to_push: String) { log_text.text.push_front(event_to_push); }
 
 // TODO find a more performant approach.
 // Fine now because time is of the essence
