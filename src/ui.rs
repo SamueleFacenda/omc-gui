@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
 };
 use crate::gui::types::Status;
+use crate::orchestrator::OrchestratorManualAction::{SendAsteroid, SendSunray};
 use super::ecs::events::Scroll;
 use super::ecs::resources::{EntityClickRes, GameState, OrchestratorResource};
 use super::ecs::{
@@ -442,6 +443,7 @@ pub(crate) fn game_menu_action(
             match action {
                 ButtonActions::StartGame => {
                     if state.set_if_neq(GameState::Playing) {
+                        orchestrator.orchestrator.set_mode_auto();
                         info!("game started");
                     }
                 }
@@ -451,33 +453,45 @@ pub(crate) fn game_menu_action(
                     }
                 }
                 ButtonActions::Blind => {
-                    state.set_if_neq(GameState::Override);
-                    info!("entering manual override mode");
+                    if state.set_if_neq(GameState::Override) {
+                        info!("entering manual override mode");
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
 
                     let targets = orchestrator.orchestrator.get_alive_planets();
-                    
+
                     println!("targets: {:?}", targets);
 
-                    if let Err(s) = orchestrator.orchestrator.send_sunray_from_gui(targets) {
-                        error!("{}", s);
+                    for planet_id in targets {
+                        orchestrator.orchestrator.schedule_manual_action(SendSunray { planet_id });
                     }
 
                     println!("done sending sunrays");
                 }
                 ButtonActions::Nuke => {
-                    state.set_if_neq(GameState::Override);
+                    if state.set_if_neq(GameState::Override) {
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
 
                     let targets = orchestrator.orchestrator.get_alive_planets();
 
-                    if let Err(s) = orchestrator.orchestrator.send_asteroid_from_gui(targets) {
-                        error!("{}", s);
+                    for planet_id in targets {
+                        orchestrator.orchestrator.schedule_manual_action(SendAsteroid {planet_id})
                     }
                 }
                 ButtonActions::CreateBasic => {
+                    if state.set_if_neq(GameState::Override) {
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
+
                     //TODO call the orchestrator to generate basic resources
                     error!("function has not been implemented");
                 }
                 ButtonActions::CreateComplex => {
+                    if state.set_if_neq(GameState::Override) {
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
+
                     //TODO call the orchestrator to generate complex resources
                     error!("function has not been implemented");
                 }
@@ -531,19 +545,19 @@ pub(crate) fn manual_planet_action(
         if interaction == Interaction::Pressed {
             match action {
                 ButtonActions::ManualAsteroid => {
-                    state.set_if_neq(GameState::Override);
-                    if let Some(id) = selected_planet.planet {
-                        if let Err(e) = orchestrator.orchestrator.send_asteroid_from_gui(vec![id]) {
-                            error!(e)
-                        }
+                    if state.set_if_neq(GameState::Override) {
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
+                    if let Some(planet_id) = selected_planet.planet {
+                        orchestrator.orchestrator.schedule_manual_action(SendAsteroid {planet_id});
                     }
                 }
                 ButtonActions::ManualSunray => {
-                    state.set_if_neq(GameState::Override);
-                    if let Some(id) = selected_planet.planet {
-                        if let Err(e) = orchestrator.orchestrator.send_sunray_from_gui(vec![id]) {
-                            error!(e)
-                        }
+                    if state.set_if_neq(GameState::Override) {
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
+                    if let Some(planet_id) = selected_planet.planet {
+                        orchestrator.orchestrator.schedule_manual_action(SendSunray {planet_id});
                     }
                 }
                 _ => {}

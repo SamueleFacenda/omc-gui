@@ -91,22 +91,15 @@ pub fn game_loop(
 
                 handle_tick(&mut commands, events, log_text);
 
-                // update the planet state map after the events occurrederr
-                planets.as_mut().map = orchestrator.orchestrator.get_planets_info();
-                // yeah
-                explorers.as_mut().map = orchestrator.orchestrator.get_explorer_states();
-
-                // launch either an asteroid or a sunray with a random choice
+                // launch either an asteroid or a sunray with a random choice (and let the explorers play)
                 if let Err(e) = orchestrator.orchestrator.manual_step() {
                     log::error!("Failed to advance orchestrator step: {e}");
                     commands.insert_resource(GameState::Paused);
                 }
 
-                // handle all of the previous events
-                if let Err(e) = orchestrator.orchestrator.process_commands() {
-                    log::error!("Failed to process orchestrator commands: {e}");
-                    commands.insert_resource(GameState::Paused);
-                }
+                // update the planet state map after the events occurred
+                planets.as_mut().map = orchestrator.orchestrator.get_planets_info();
+                explorers.as_mut().map = orchestrator.orchestrator.get_explorer_states();
 
                 println!("EXITING TIMER");
                 timer.reset();
@@ -120,12 +113,12 @@ pub fn game_loop(
                 let events = orchestrator.orchestrator.get_gui_events_buffer().drain_events();
                 handle_tick(&mut commands, events, log_text);
 
-                // handle all of the previous events
+                // Process the manual commands sent by the user
                 if let Err(e) = orchestrator.orchestrator.process_commands() {
-                    log::error!("Failed to process orchestrator commands: {e}");
+                    log::error!("Failed to advance orchestrator step: {e}");
                     commands.insert_resource(GameState::Paused);
                 }
-
+                
                 // update the planet state map after the events occurred
                 planets.as_mut().map = orchestrator.orchestrator.get_planets_info();
                 explorers.as_mut().map = orchestrator.orchestrator.get_explorer_states();
