@@ -79,9 +79,10 @@ pub fn setup(
             ))
             .observe(choose_on_click);
 
-        if i == 0 {
-            for j in 0..EXP_SPRITE_NUM {
-                let explorer_image_handle = explorer_assets.handles[j].clone();
+        let cfg = AppConfig::get();
+        if i == cfg.initial_planet_id {
+            for j in 0..cfg.explorers.len() {
+                let explorer_image_handle = explorer_assets.handles[j % EXP_SPRITE_NUM].clone();
                 let (offset_x, offset_y): (f32, f32) = if j == 0 {
                     EXP_TOMMY_OFFSET
                 } else {
@@ -90,7 +91,7 @@ pub fn setup(
                 commands
                     .spawn((
                         Explorer {
-                            id: j as u32,
+                            id: j as u32 + cfg.number_of_planets + 1,
                             current_planet: i,
                             position_offset: (offset_x, offset_y),
                         },
