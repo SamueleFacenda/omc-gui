@@ -3,8 +3,10 @@ use bevy::{
     picking::hover::HoverMap,
     prelude::*,
 };
+use common_game::components::resource::BasicResourceType::Carbon;
+use common_game::components::resource::ComplexResourceType::Diamond;
 use crate::gui::types::Status;
-use crate::orchestrator::OrchestratorManualAction::{SendAsteroid, SendSunray};
+use crate::orchestrator::OrchestratorManualAction::{GenerateBasic, GenerateComplex, MoveExplorer, SendAsteroid, SendSunray};
 use super::ecs::events::Scroll;
 use super::ecs::resources::{EntityClickRes, GameState, OrchestratorResource};
 use super::ecs::{
@@ -568,22 +570,38 @@ pub(crate) fn manual_planet_action(
 
 pub(crate) fn manual_explorer_action(
     mut action_query: Query<(&Interaction, &ButtonActions), (Changed<Interaction>, With<Button>)>,
-    //mut orchestrator: ResMut<OrchestratorResource>,
-    //selected_planet: Res<EntityClickRes>,
+    mut orchestrator: ResMut<OrchestratorResource>,
+    selected_entity: Res<EntityClickRes>,
     mut state: ResMut<GameState>,
 ) {
     for (&interaction, action) in &mut action_query {
         if interaction == Interaction::Pressed {
             match action {
                 ButtonActions::CreateBasic => {
-                    state.set_if_neq(GameState::Override);
-                    // TODO qui va lo spostamento dell'explorer
-                    error!("function not yet implemented");
+                    if state.set_if_neq(GameState::Override) {
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
+
+                    if let Some(explorer_id) = selected_entity.explorer {
+                        orchestrator.orchestrator.schedule_manual_action(
+                            GenerateBasic {
+                                explorer_id,
+                                resource: Carbon, // TODO placeholder
+                            },
+                        );
+                    }
                 }
                 ButtonActions::CreateComplex => {
-                    state.set_if_neq(GameState::Override);
-                    // TODO qui va lo spostamento dell'explorer
-                    error!("function not yet implemented");
+                    if state.set_if_neq(GameState::Override) {
+                        orchestrator.orchestrator.set_mode_manual();
+                    }
+
+                    if let Some(explorer_id) = selected_entity.explorer {
+                        orchestrator.orchestrator.schedule_manual_action(GenerateComplex {
+                            explorer_id,
+                            resource: Diamond, // TODO placeholder
+                        })
+                    }
                 }
                 _ => {}
             }
@@ -593,17 +611,23 @@ pub(crate) fn manual_explorer_action(
 
 pub(crate) fn explorer_move_action(
     mut action_query: Query<(&Interaction, &DropdownItem), (Changed<Interaction>, With<Button>)>,
-    // mut orchestrator: ResMut<OrchestratorResource>,
+    mut orchestrator: ResMut<OrchestratorResource>,
+    selected_entity: Res<EntityClickRes>,
     mut state: ResMut<GameState>,
 ) {
-    for (&interaction, _action) in &mut action_query {
+    for (&interaction, action) in &mut action_query {
         if interaction == Interaction::Pressed {
-            state.set_if_neq(GameState::Override);
-            // TODO qui va lo spostamento dell'explorer
-            error!("function not yet implemented");
-            // if let Err(e) = orchestrator.orchestrator.send_move_to_planet(action.explorer_id, action.planet_id){
-            //     error!("error in explorer move:{}", e);
-            // }
+            if state.set_if_neq(GameState::Override) {
+                orchestrator.orchestrator.set_mode_manual();
+            }
+            if let Some(_planet_id) = selected_entity.planet {
+                orchestrator.orchestrator.schedule_manual_action(
+                    MoveExplorer {
+                        explorer_id: action.explorer_id,
+                        destination_planet_id: action.planet_id,
+                    }
+                );
+            }
         }
     }
 }

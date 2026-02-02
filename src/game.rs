@@ -112,17 +112,17 @@ pub fn game_loop(
             if orchestrator.orchestrator.get_gui_events_buffer().has_events() {
                 let events = orchestrator.orchestrator.get_gui_events_buffer().drain_events();
                 handle_tick(&mut commands, events, log_text);
-
-                // Process the manual commands sent by the user
-                if let Err(e) = orchestrator.orchestrator.process_commands() {
-                    log::error!("Failed to advance orchestrator step: {e}");
-                    commands.insert_resource(GameState::Paused);
-                }
-                
-                // update the planet state map after the events occurred
-                planets.as_mut().map = orchestrator.orchestrator.get_planets_info();
-                explorers.as_mut().map = orchestrator.orchestrator.get_explorer_states();
             }
+
+            // Process the manual commands sent by the user
+            if let Err(e) = orchestrator.orchestrator.process_commands() {
+                log::error!("Failed to advance orchestrator step: {e}");
+                commands.insert_resource(GameState::Paused);
+            }
+
+            // update the planet state map after the events occurred
+            planets.as_mut().map = orchestrator.orchestrator.get_planets_info();
+            explorers.as_mut().map = orchestrator.orchestrator.get_explorer_states();
         }
         _ => {}
     }
