@@ -458,7 +458,7 @@ pub(crate) fn manual_explorer_action(
                     if let Some(explorer_id) = selected_entity.explorer {
                         let planet_id = explorer_status.map.get_current_planet(&explorer_id);
                         if let Some(planet) = planet_status.map.get_info(planet_id) {
-                            let basic_resources = types::get_planet_basic_resources(&planet.name);
+                            let basic_resources = types::get_planet_basic_resources(planet.name);
                             if !basic_resources.is_empty() {
                                 let idx = rand::random::<i32>() as usize % basic_resources.len(); // get a random one
 
@@ -478,7 +478,7 @@ pub(crate) fn manual_explorer_action(
                     if let Some(explorer_id) = selected_entity.explorer {
                         let planet_id = explorer_status.map.get_current_planet(&explorer_id);
                         if let Some(planet) = planet_status.map.get_info(planet_id) {
-                            let basic_resources = types::get_planet_complex_resources(&planet.name);
+                            let basic_resources = types::get_planet_complex_resources(planet.name);
                             if !basic_resources.is_empty() {
                                 let idx = rand::random::<i32>() as usize % basic_resources.len(); // get a random one
 
